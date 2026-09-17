@@ -1,0 +1,2875 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mete 3D Studio — ERP & Muhasebe</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Firebase v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #1e293b; overflow: hidden; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .kanban-col { min-height: 400px; }
+        .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
+        .bar-chart .bar { flex: 1; border-radius: 6px 6px 0 0; min-height: 4px; position: relative; transition: all .2s; }
+        .bar-chart .bar:hover { opacity: .85; }
+        .bar-chart .bar .val { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; color: #475569; white-space: nowrap; }
+        .bar-chart .bar .lbl { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #94a3b8; white-space: nowrap; }
+        .stat-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+        input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+    </style>
+</head>
+<body class="flex h-screen w-full">
+
+    <!-- ==== SİDEBAR ==== -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 shadow-xl z-20">
+        <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+            <div class="bg-sky-500 text-white p-2 rounded-lg shadow-lg shadow-sky-500/30">
+                <i class="ph-fill ph-cube text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-white font-bold text-lg leading-tight">Mete 3D Studio</h1>
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mt-0.5">ERP & Muhasebe Pro</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+            <button onclick="switchTab('tab-dashboard')" id="btn-tab-dashboard" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-sky-600 text-white">
+                <i class="ph ph-gauge text-lg"></i> Gösterge Paneli
+            </button>
+            <button onclick="switchTab('tab-materials')" id="btn-tab-materials" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+                <i class="ph ph-intersect text-lg"></i> Hammadde & Aksesuar
+            </button>
+            <button onclick="switchTab('tab-products')" id="btn-tab-products" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+                <i class="ph ph-package text-lg"></i> Ürünler & Fiyatlama
+            </button>
+            <button onclick="switchTab('tab-dealers')" id="btn-tab-dealers" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+                <i class="ph ph-storefront text-lg"></i> Bayiler & Platformlar
+            </button>
+            <button onclick="switchTab('tab-kanban')" id="btn-tab-kanban" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+                <i class="ph ph-kanban text-lg"></i> Sipariş Kanban
+            </button>
+            <button onclick="switchTab('tab-finance')" id="btn-tab-finance" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+                <i class="ph ph-wallet text-lg"></i> Finans & Cari Hesap
+            </button>
+            <button onclick="switchTab('tab-accounting')" id="btn-tab-accounting" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+                <i class="ph ph-bank text-lg text-emerald-400"></i> Muhasebe & Vergi
+            </button>
+            <button onclick="switchTab('tab-reports')" id="btn-tab-reports" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+                <i class="ph ph-chart-bar text-lg"></i> Raporlar
+            </button>
+            <button onclick="switchTab('tab-settings')" id="btn-tab-settings" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+                <i class="ph ph-gear text-lg"></i> Ayarlar & Yedekleme
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800 text-xs">
+            <div id="sync-status" class="flex items-center gap-2 text-amber-400 bg-amber-400/10 p-2 rounded">
+                <i class="ph ph-spinner-gap animate-spin text-sm"></i> Bağlanıyor...
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 relative overflow-hidden bg-slate-50">
+
+        <!-- ==== TAB 0: DASHBOARD ==== -->
+        <div id="tab-dashboard" class="tab-content flex flex-col h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Gösterge Paneli</h2>
+                    <p class="text-sm text-slate-500" id="dash-date">İşletmenizin anlık durumu</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="switchTab('tab-kanban')" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm flex items-center gap-2">
+                    <i class="ph-bold ph-plus"></i> Yeni Sipariş
+                    </button>
+                    <button onclick="switchTab('tab-reports')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Raporlar</button>
+                </div>
+            </div>
+
+            <!-- KPI Kartları -->
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6" id="dash-kpis">
+                <!-- JS Injected -->
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+                <!-- Son 6 Ay Satış Grafiği -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 xl:col-span-2">
+                    <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-chart-line-up text-sky-500"></i> Son 6 Ay Satış (Tahsil Edilen)</h3>
+                    <span class="text-xs text-slate-400">₺ cinsinden</span>
+                    </div>
+                    <div class="bar-chart px-2" id="dash-chart">
+                    <!-- JS Injected -->
+                    </div>
+                </div>
+
+                <!-- Uyarılar -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph-fill ph-warning-circle text-amber-500"></i> Dikkat Gerektirenler</h3>
+                    <div id="dash-alerts" class="space-y-2">
+                    <!-- JS Injected -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <!-- Son Siparişler -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-shopping-bag text-emerald-500"></i> Son Siparişler</h3>
+                    <button onclick="openHistory('sales')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-semibold transition">Tümü</button>
+                    </div>
+                    <div id="dash-orders" class="space-y-2">
+                    <!-- JS Injected -->
+                    </div>
+                </div>
+
+                <!-- Cari Özet -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-handshake text-purple-500"></i> Cari Hesap (Alacaklar)</h3>
+                    <button onclick="switchTab('tab-finance')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-semibold transition">Finans</button>
+                    </div>
+                    <div id="dash-cari" class="space-y-2">
+                    <!-- JS Injected -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==== TAB 1: HAMMADDE & AKSESUAR ==== -->
+        <div id="tab-materials" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Hammadde ve Aksesuar Deposu</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Filament Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-2 text-sky-700">
+                    <i class="ph-fill ph-spinner-gap"></i> Filament Stoğu
+                    </h3>
+                    <button onclick="openHistory('filament')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-semibold transition">Geçmişi Gör</button>
+                    </div>
+                    <div class="flex gap-4 mb-6">
+                    <div class="flex-1 bg-slate-50 p-4 rounded-lg border border-slate-100 text-center">
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Mevcut Stok</p>
+                    <p class="text-2xl font-bold text-slate-800" id="ui-fil-stock">0 gr</p>
+                    <p class="text-[10px] mt-1 font-semibold" id="ui-fil-warn"></p>
+                    </div>
+                    <div class="flex-1 bg-slate-50 p-4 rounded-lg border border-slate-100 text-center">
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Ort. Maliyet (gr)</p>
+                    <p class="text-2xl font-bold text-slate-800" id="ui-fil-avg">0.00 ₺</p>
+                    </div>
+                    </div>
+                    <form onsubmit="addFilament(event)" class="flex gap-3 items-end mt-auto flex-wrap">
+                    <div class="flex-1 min-w-[120px]">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Yeni Alım (Gram)</label>
+                    <input type="number" id="inp-fil-qty" required min="1" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-sky-500 outline-none">
+                    </div>
+                    <div class="flex-1 min-w-[120px]">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Toplam Fiyat (₺)</label>
+                    <input type="number" step="0.01" id="inp-fil-price" required min="0" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-sky-500 outline-none">
+                    </div>
+                    <div class="flex items-center gap-2 pb-2">
+                    <input type="checkbox" id="inp-fil-faturali" class="w-4 h-4 accent-emerald-600">
+                    <label for="inp-fil-faturali" class="text-xs font-semibold text-slate-600 cursor-pointer" title="Faturalı alımda KDV giren olarak mahsuplaşır">Faturalı Alım</label>
+                    </div>
+                    <button type="submit" class="bg-sky-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-sky-700 transition">Stok Ekle</button>
+                    </form>
+                    <div class="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs">
+                    <div class="flex justify-between items-center">
+                    <span class="font-semibold text-emerald-800">Faturalı Hammadde Alımlarından Biriken Giren KDV</span>
+                    <b id="ui-fil-kdv-total" class="text-emerald-700">0 ₺</b>
+                    </div>
+                    <p class="text-[11px] text-emerald-700 mt-1">Bu tutar, çıkan KDV'den mahsup edilebilir (faturasız alımlar giren KDV oluşturmaz).</p>
+                    </div>
+                    <div id="ui-fil-kdv-logs" class="mt-3 max-h-36 overflow-y-auto border border-slate-100 rounded-lg bg-slate-50 text-xs"></div>
+                </div>
+
+                <!-- Accessories Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-2 text-purple-700">
+                    <i class="ph-fill ph-link"></i> Aksesuarlar
+                    </h3>
+                    <div class="flex gap-2">
+                    <button onclick="openHistory('accessory')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-semibold transition">Geçmiş</button>
+                    <button onclick="openAccessoryModal()" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded font-semibold transition">+ Aksesuar</button>
+                    </div>
+                    </div>
+                    <div class="overflow-y-auto flex-1 border border-slate-100 rounded-lg max-h-[320px]">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-slate-50 text-slate-500 sticky top-0">
+                    <tr>
+                    <th class="p-2 font-semibold">Adı</th>
+                    <th class="p-2 font-semibold text-center">Stok</th>
+                    <th class="p-2 font-semibold text-right">Ort. Maliyet</th>
+                    <th class="p-2 font-semibold text-center">İşlem</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ui-acc-list" class="divide-y divide-slate-100">
+                    <!-- JS Injected -->
+                    </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==== TAB 2: ÜRÜNLER & FİYATLAMA ==== -->
+        <div id="tab-products" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-end mb-6 flex-wrap gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Ürün Kataloğu ve Fiyatlama</h2>
+                    <p class="text-sm text-slate-500">Akıllı Fiyatlandırma Motoru; malzeme, sabit gider, vergi ve hedef kârı birlikte hesaplar.</p>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <input type="text" id="inp-prod-search" placeholder="Ürün ara..." oninput="renderProducts()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-48 outline-none focus:border-sky-500">
+                    <button onclick="openProductModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm flex items-center gap-2">
+                    <i class="ph-bold ph-plus"></i> Yeni Ürün Ekle
+                    </button>
+                </div>
+            </div>
+            <div id="ui-products-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <!-- JS Injected -->
+            </div>
+        </div>
+
+        <!-- ==== TAB 3: BAYİLER & PLATFORMLAR ==== -->
+        <div id="tab-dealers" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Bayiler ve Satış Platformları</h2>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                <form onsubmit="addDealer(event)" class="flex gap-4 items-end flex-wrap">
+                    <div class="flex-1 min-w-[200px]">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Firma / Platform Adı</label>
+                    <input type="text" id="inp-dealer-name" required class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-sky-500">
+                    </div>
+                    <div class="w-64">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
+                    <select id="inp-dealer-category" class="w-full border border-slate-300 rounded p-2 text-sm outline-none">
+                    <option value="Fiziksel Mağaza">Fiziksel Mağaza</option>
+                    <option value="Bireysel Müşteri" selected>Bireysel Müşteri</option>
+                    <option value="E-Ticaret Kanalı">E-Ticaret Kanalı (Trendyol, Shopier vb.)</option>
+                    </select>
+                    </div>
+                    <button type="submit" class="bg-slate-800 text-white px-6 py-2 rounded text-sm font-semibold hover:bg-slate-700">Kaydet</button>
+                </form>
+            </div>
+            <div class="mb-4 flex items-center gap-2">
+                <label class="text-xs font-semibold text-slate-600">Kategori Filtresi:</label>
+                <select id="inp-dealer-filter" onchange="renderDealers()" class="border border-slate-300 rounded p-2 text-xs">
+                    <option value="">Tümü</option>
+                    <option value="Fiziksel Mağaza">Fiziksel Mağaza</option>
+                    <option value="Bireysel Müşteri">Bireysel Müşteri</option>
+                    <option value="E-Ticaret Kanalı">E-Ticaret Kanalı</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="ui-dealers-grid">
+                <!-- JS Injected -->
+            </div>
+        </div>
+
+        <!-- ==== TAB 4: SİPARİŞ KANBAN ==== -->
+        <div id="tab-kanban" class="tab-content hidden flex-col h-full overflow-hidden p-6">
+            <div class="flex justify-between items-center mb-6 flex-shrink-0 flex-wrap gap-4">
+                <h2 class="text-2xl font-bold text-slate-800">Sipariş İş Akışı (Kanban)</h2>
+                <div class="flex gap-3">
+                    <button onclick="openHistory('sales')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Satış Geçmişi</button>
+                    <button onclick="openOrderModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">+ Yeni Sipariş (POS)</button>
+                </div>
+            </div>
+
+            <div class="flex gap-6 flex-1 overflow-x-auto pb-4 h-full">
+                <!-- Column: Pending -->
+                <div class="flex-1 min-w-[300px] bg-slate-100 rounded-xl flex flex-col border border-slate-200 overflow-hidden">
+                    <div class="p-3 border-b border-slate-200 bg-white/50 rounded-t-xl shrink-0 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="ph-fill ph-clock text-amber-500"></i> Üretimde / Bekliyor</h3>
+                    <span id="kanban-pending-count" class="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="kanban-pending" class="p-3 flex-1 flex flex-col gap-3 overflow-y-auto">
+                    <!-- JS -->
+                    </div>
+                </div>
+
+                <!-- Column: Delivered -->
+                <div class="flex-1 min-w-[300px] bg-slate-100 rounded-xl flex flex-col border border-slate-200 overflow-hidden">
+                    <div class="p-3 border-b border-slate-200 bg-white/50 rounded-t-xl shrink-0 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="ph-fill ph-check-circle text-emerald-500"></i> Teslim Edildi</h3>
+                    <span id="kanban-delivered-count" class="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="kanban-delivered" class="p-3 flex-1 flex flex-col gap-3 overflow-y-auto opacity-90">
+                    <!-- JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==== TAB 5: FİNANS & CARİ HESAP ==== -->
+        <div id="tab-finance" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Finans ve Nakit Akışı</h2>
+                <button onclick="openHistory('expense')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded font-semibold text-sm">Gider Geçmişi</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-emerald-50 border border-emerald-200 p-5 rounded-xl">
+                    <p class="text-sm font-semibold text-emerald-700 uppercase">Toplam Kasa Girişi</p>
+                    <p class="text-3xl font-bold text-emerald-800 mt-2" id="ui-fin-in">0.00 ₺</p>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 p-5 rounded-xl">
+                    <p class="text-sm font-semibold text-rose-700 uppercase">Toplam Kasa Çıkışı</p>
+                    <p class="text-3xl font-bold text-rose-800 mt-2" id="ui-fin-out">0.00 ₺</p>
+                </div>
+                <div class="bg-sky-50 border border-sky-200 p-5 rounded-xl shadow-sm">
+                    <p class="text-sm font-semibold text-sky-700 uppercase">NET NAKİT</p>
+                    <p class="text-3xl font-bold text-sky-800 mt-2" id="ui-fin-net">0.00 ₺</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                <!-- Manuel Gider -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between mb-4 items-center">
+                    <h3 class="font-bold text-slate-800">Manuel Gider İşlem (Kasa Çıkışı)</h3>
+                    </div>
+                    <form onsubmit="addManualExpense(event)" class="flex gap-4 items-end flex-wrap">
+                    <div class="flex-1 min-w-[200px]">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Açıklama (Örn: Ofis Kırtasiye, Yemek)</label>
+                    <input type="text" id="inp-exp-desc" required class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-rose-500">
+                    </div>
+                    <div class="w-40">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tutar (₺)</label>
+                    <input type="number" step="0.01" id="inp-exp-amt" required min="0" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-rose-500">
+                    </div>
+                    <div class="flex items-center gap-2 pb-2">
+                    <input type="checkbox" id="inp-exp-faturali" class="w-4 h-4 accent-emerald-600">
+                    <label for="inp-exp-faturali" class="text-xs font-semibold text-slate-600 cursor-pointer" title="Faturalı giderler KDV giren olarak mahsuplaşır ve matrahı düşürür">Faturalı</label>
+                    </div>
+                    <button type="submit" class="bg-rose-600 text-white px-6 py-2 rounded text-sm font-semibold hover:bg-rose-700">Kasa Çıkışı Yap</button>
+                    </form>
+                </div>
+
+                <!-- Cari Hesap / Alacaklar -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-handshake text-purple-500"></i> Cari Hesap — Bekleyen Tahsilatlar</h3>
+                    <span id="ui-cari-total" class="text-xs font-bold bg-purple-100 text-purple-700 px-2 py-1 rounded-full">0 ₺</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">Teslim edildi ama parası henüz alınmamış siparişler. "Tahsil Et" ile kasaya işleyin.</p>
+                    <div id="ui-cari-list" class="space-y-2 max-h-[260px] overflow-y-auto">
+                    <!-- JS Injected -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==== TAB 6: MUHASEBE & VERGİ ==== -->
+        <div id="tab-accounting" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
+            <div class="max-w-7xl mx-auto w-full">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Resmi Muhasebe & Vergi (<span id="acc-year">2026</span>)</h2>
+                <p class="text-sm text-slate-500 mb-6">Yasal matrahınız, KDV durumunuz ve demirbaş amortismanlarınız. Tüm hesaplar tahminidir; kesin rakamlar için mali müşavirinize danışın.</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2"><i class="ph-fill ph-scales text-amber-500"></i> Gelir Vergisi</h3>
+                    <div class="text-center mb-3">
+                    <p class="text-xs font-semibold uppercase text-slate-500">Resmi Vergi Matrahı (Kâr)</p>
+                    <p class="text-2xl font-bold text-slate-800" id="ui-acc-matrah">0.00 ₺</p>
+                    </div>
+                    <div class="bg-amber-50 text-amber-800 p-3 rounded text-sm font-semibold text-center border border-amber-200 mb-3" id="ui-acc-bracket">
+                    %15 Dilimindesiniz
+                    </div>
+                    <div class="text-xs text-slate-500 space-y-1">
+                    <div class="flex justify-between"><span>Faturalı Gelir (KDV hariç):</span><b id="ui-acc-gelir">0 ₺</b></div>
+                    <div class="flex justify-between"><span>Faturalı Giderler:</span><b id="ui-acc-gider">0 ₺</b></div>
+                    <div class="flex justify-between"><span>Yıllık Sabit Giderler:</span><b id="ui-acc-sabit">0 ₺</b></div>
+                    <div class="flex justify-between"><span>Yıllık Amortisman:</span><b id="ui-acc-amort">0 ₺</b></div>
+                    <div class="flex justify-between border-t border-slate-200 pt-1 mt-1"><span>Tahmini Yıllık Gelir Vergisi:</span><b class="text-amber-700" id="ui-acc-vergi">0 ₺</b></div>
+                    </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2"><i class="ph-fill ph-receipt text-emerald-500"></i> KDV Durumu</h3>
+                    <div class="text-xs text-slate-500 space-y-2">
+                    <div class="flex justify-between"><span>KDV Çıkan (Faturalı satışlar):</span><b class="text-emerald-700" id="ui-kdv-cikan">0 ₺</b></div>
+                    <div class="flex justify-between"><span>KDV Giren (Faturalı alımlar):</span><b class="text-sky-700" id="ui-kdv-giren">0 ₺</b></div>
+                    <div class="flex justify-between border-t border-slate-200 pt-2 mt-2"><span>Ödenecek KDV:</span><b class="text-rose-700 text-sm" id="ui-kdv-odenecek">0 ₺</b></div>
+                    <div class="flex justify-between"><span>Devreden KDV:</span><b class="text-emerald-700" id="ui-kdv-devreden">0 ₺</b></div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-4 bg-slate-50 p-2 rounded">Faturalı satışlarınızın KDV'si "Ödenecek KDV" havuzuna, faturalı alımlarınızın KDV'si ise mahsuplaşma için "KDV Giren"e işlenir.</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-1 flex flex-col">
+                    <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Sabit Gider Ayarları (Aylık)</h3>
+                    <div class="grid grid-cols-2 gap-4 flex-1">
+                    <div><label class="text-xs text-slate-500">Mali Müşavir (₺)</label><input type="number" id="set-musavir" class="w-full border rounded p-1.5 text-sm font-semibold mt-1" onchange="saveSettings()"></div>
+                    <div><label class="text-xs text-slate-500">KDV Damga (₺)</label><input type="number" id="set-kdv" class="w-full border rounded p-1.5 text-sm font-semibold mt-1" onchange="saveSettings()"></div>
+                    <div><label class="text-xs text-slate-500">Muhtasar Damga (₺)</label><input type="number" id="set-muh" class="w-full border rounded p-1.5 text-sm font-semibold mt-1" onchange="saveSettings()"></div>
+                    <div><label class="text-xs text-slate-500">Geçici V. Damga (₺)</label><input type="number" id="set-gec" class="w-full border rounded p-1.5 text-sm font-semibold mt-1" onchange="saveSettings()"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-3">Detaylı ayarlar (KDV oranı, vergi dilimleri) için <button onclick="switchTab('tab-settings')" class="text-sky-600 font-semibold underline">Ayarlar</button> sekmesine bakın.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6">
+                    <h3 class="font-bold text-slate-800 mb-4 flex justify-between items-center">
+                    <span><i class="ph-fill ph-desktop text-sky-500"></i> Demirbaşlar (Yazıcı & APU Sistemler)</span>
+                    </h3>
+                    <form onsubmit="addAsset(event)" class="flex gap-4 items-end mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100 flex-wrap">
+                    <div class="flex-1 min-w-[200px]">
+                    <label class="text-xs text-slate-600 font-semibold block mb-1">Cihaz Adı (Örn: P1S Yazıcı, APU Kasa)</label>
+                    <input type="text" id="inp-ast-name" required class="w-full border rounded p-2 text-sm">
+                    </div>
+                    <div class="w-32">
+                    <label class="text-xs text-slate-600 font-semibold block mb-1">Fatura (₺)</label>
+                    <input type="number" id="inp-ast-price" required min="0" class="w-full border rounded p-2 text-sm">
+                    </div>
+                    <div class="w-32">
+                    <label class="text-xs text-slate-600 font-semibold block mb-1">Amortisman Yılı</label>
+                    <input type="number" id="inp-ast-years" value="5" required min="1" class="w-full border rounded p-2 text-sm">
+                    </div>
+                    <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded font-semibold text-sm">Demirbaş Ekle</button>
+                    </form>
+                    <div class="overflow-x-auto w-full">
+                    <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
+                    <tr>
+                    <th class="p-2">Cihaz</th>
+                    <th class="p-2">Alım Tutarı</th>
+                    <th class="p-2">Süre</th>
+                    <th class="p-2">Yıllık Gider Yansıması</th>
+                    <th class="p-2">Aylık Gider Yansıması</th>
+                    <th class="p-2 text-center">İşlem</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ui-assets-list" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-slate-800 mb-3">12 Aylık Vergi Takvimi (<span id="cal-year">2026</span>)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="ui-months-grid">
+                    <!-- JS Injected -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ==== TAB 7: RAPORLAR ==== -->
+        <div id="tab-reports" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Raporlar</h2>
+                    <p class="text-sm text-slate-500">Aylık kâr/zarar, bayi performansı ve ürün analizi. CSV olarak dışa aktarabilirsiniz.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportMonthlyCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Aylık Rapor CSV</button>
+                    <button onclick="exportDealerCSV()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Bayi Raporu CSV</button>
+                    <button onclick="exportProductCSV()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Ürün Raporu CSV</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                <h3 class="font-bold text-slate-800 mb-4">Aylık Kâr / Zarar Tablosu (<span id="rep-year">2026</span>)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-600 font-semibold">
+                    <tr>
+                    <th class="p-2">Ay</th>
+                    <th class="p-2 text-right">Gelir (₺)</th>
+                    <th class="p-2 text-right">Gider (₺)</th>
+                    <th class="p-2 text-right">Net (₺)</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ui-monthly-report" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <h3 class="font-bold text-slate-800 mb-4">Bayi Bazlı Satış Performansı</h3>
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-600 font-semibold">
+                    <tr>
+                    <th class="p-2">Bayi / Platform</th>
+                    <th class="p-2 text-center">Sipariş</th>
+                    <th class="p-2 text-right">Ciro (₺)</th>
+                    <th class="p-2 text-right">Alacak (₺)</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ui-dealer-report" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <h3 class="font-bold text-slate-800 mb-4">Ürün Performansı</h3>
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-600 font-semibold">
+                    <tr>
+                    <th class="p-2">Ürün</th>
+                    <th class="p-2 text-center">Satılan</th>
+                    <th class="p-2 text-right">Ciro (₺)</th>
+                    <th class="p-2 text-right">Tahmini Kâr (₺)</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ui-product-report" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==== TAB 8: AYARLAR ==== -->
+        <div id="tab-settings" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
+            <div class="max-w-5xl mx-auto w-full">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Ayarlar & Yedekleme</h2>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Firebase -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-1 flex items-center gap-2"><i class="ph-fill ph-cloud text-sky-500"></i> Firebase Bağlantısı</h3>
+                    <p class="text-xs text-slate-500 mb-4">Verileriniz Firebase Firestore'da saklanır. Kendi Firebase projenizin config bilgilerini buraya yapıştırabilirsiniz.</p>
+                    <div class="space-y-2 text-sm">
+                    <div><label class="text-xs font-semibold text-slate-600">apiKey</label><input type="text" id="fb-apikey" class="w-full border rounded p-2 text-xs mt-0.5"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">authDomain</label><input type="text" id="fb-authdomain" class="w-full border rounded p-2 text-xs mt-0.5"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">projectId</label><input type="text" id="fb-projectid" class="w-full border rounded p-2 text-xs mt-0.5"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">storageBucket</label><input type="text" id="fb-storagebucket" class="w-full border rounded p-2 text-xs mt-0.5"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">messagingSenderId</label><input type="text" id="fb-senderid" class="w-full border rounded p-2 text-xs mt-0.5"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">appId</label><input type="text" id="fb-appid" class="w-full border rounded p-2 text-xs mt-0.5"></div>
+                    <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-xs font-semibold text-slate-600">Koleksiyon</label><input type="text" id="fb-collection" class="w-full border rounded p-2 text-xs mt-0.5"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">Doküman</label><input type="text" id="fb-doc" class="w-full border rounded p-2 text-xs mt-0.5"></div>
+                    </div>
+                    </div>
+                    <button onclick="saveFirebaseConfig()" class="mt-4 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded font-semibold text-sm w-full">Kaydet ve Yeniden Bağlan</button>
+                    <div class="mt-3 bg-amber-50 border border-amber-200 rounded p-3 text-[11px] text-amber-800">
+                    <b>Güvenlik notu:</b> Bu uygulama kullanıcı girişi (Authentication) kullanmaz. Bu yüzden <code>request.auth != null</code> kuralı işe yaramaz ve veriye erişimi tamamen keser. Firestore kurallarınızı test modunda bırakın: <code class="block mt-1 bg-white p-1 rounded">allow read, write: if true;</code> Bu durumda bağlantıyı bilen herkes veriye erişebilir; bu yüzden verilerinizi düzenli olarak JSON yedekle ile saklayın ve Firebase config'inizi kimseyle paylaşmayın.
+                    </div>
+                    </div>
+
+                    <!-- İşletme Ayarları -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph-fill ph-sliders text-emerald-500"></i> İşletme Ayarları</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="text-xs font-semibold text-slate-600">KDV Oranı (%)</label><input type="number" id="set-kdv-rate" class="w-full border rounded p-2 text-sm mt-1"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">Varsayılan Hedef Kâr Marjı (%)</label><input type="number" id="set-target" class="w-full border rounded p-2 text-sm mt-1"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">Düşük Filament Uyarısı (gr)</label><input type="number" id="set-low-fil" class="w-full border rounded p-2 text-sm mt-1"></div>
+                    <div><label class="text-xs font-semibold text-slate-600">Düşük Aksesuar Uyarısı (adet)</label><input type="number" id="set-low-acc" class="w-full border rounded p-2 text-sm mt-1"></div>
+                    </div>
+                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2">Gelir Vergisi Dilimleri (Ticari Kazanç — üst sınırlar artan sırada)</h4>
+                    <div class="space-y-2 text-sm" id="brackets-editor">
+                    <!-- JS Injected -->
+                    </div>
+                    <button onclick="saveSettings()" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-semibold text-sm w-full">Ayarları Kaydet</button>
+                    </div>
+                </div>
+
+                <!-- Yedekleme -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph-fill ph-database text-purple-500"></i> Yedekleme & Veri Yönetimi</h3>
+                    <div class="flex gap-3 flex-wrap">
+                    <button onclick="exportBackup()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded font-semibold text-sm">💾 Tüm Verileri Yedekle (JSON)</button>
+                    <label class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded font-semibold text-sm cursor-pointer">
+                    📂 Yedekten Geri Yükle
+                    <input type="file" id="inp-restore" accept=".json" class="hidden" onchange="importBackup(event)">
+                    </label>
+                    <button onclick="askConfirm('Tüm veriler silinecek ve sıfırlanacak. Bu işlem geri alınamaz. Emin misiniz?', resetData)" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded font-semibold text-sm">🗑️ Tüm Verileri Sıfırla</button>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Verileriniz Firebase'e kaydedilir ve ayrıca bu tarayıcıda otomatik yedeklenir. Düzenli olarak JSON yedek almanız önerilir.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==== MODAL: YENİ AKSESUAR ==== -->
+    <div id="modal-accessory" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200">
+            <div class="p-4 border-b bg-purple-50 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-purple-900 flex items-center gap-2"><i class="ph-bold ph-plus"></i> Yeni Aksesuar Ekle</h3>
+                <button onclick="closeModal('modal-accessory')" class="text-slate-400 hover:text-rose-500"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-3">
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Aksesuar Adı (örn: Halka, Mıknatıs)</label>
+                    <input type="text" id="m-acc-name" class="w-full border rounded p-2 text-sm">
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                    <label class="block text-xs font-semibold mb-1">Adet</label>
+                    <input type="number" id="m-acc-qty" min="1" class="w-full border rounded p-2 text-sm">
+                    </div>
+                    <div class="flex-1">
+                    <label class="block text-xs font-semibold mb-1">Toplam Tutar (₺)</label>
+                    <input type="number" step="0.01" id="m-acc-price" min="0" class="w-full border rounded p-2 text-sm">
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="m-acc-faturali" class="w-4 h-4 accent-emerald-600">
+                    <label for="m-acc-faturali" class="text-xs font-semibold text-slate-600 cursor-pointer">Faturalı Alım (KDV giren olarak mahsuplaşır)</label>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex justify-end rounded-b-xl">
+                <button onclick="saveAccessory()" class="bg-purple-600 text-white px-6 py-2 rounded font-semibold text-sm hover:bg-purple-700">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: YENİ ÜRÜN ==== -->
+    <div id="modal-product" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-200 flex flex-col">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <h3 class="font-bold text-lg text-slate-800" id="m-prod-title">Yeni Ürün Ekle</h3>
+                <button onclick="closeModal('modal-product')" class="text-slate-400 hover:text-rose-500"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-5 flex-1">
+                <input type="hidden" id="m-prod-id">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="block text-xs font-semibold mb-1">Ürün Adı</label><input type="text" id="m-prod-name" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Baskı Filament (Gram)</label><input type="number" id="m-prod-fil" min="0" class="w-full border rounded p-2 text-sm"></div>
+                </div>
+
+                <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-6">
+                    <label class="block text-xs font-semibold text-purple-800 mb-2">Reçete: Kullanılan Aksesuarlar</label>
+                    <div id="m-prod-recipe" class="space-y-2 mb-2"></div>
+                    <div class="flex gap-2">
+                    <select id="m-prod-acc-sel" class="flex-1 border rounded p-2 text-sm"></select>
+                    <input type="number" id="m-prod-acc-qty" placeholder="Adet" min="1" class="w-20 border rounded p-2 text-sm">
+                    <button onclick="addRecipeItem()" class="bg-purple-600 text-white px-3 py-1 rounded text-sm">Ekle</button>
+                    </div>
+                </div>
+
+                <div class="bg-sky-50 p-4 rounded-lg border border-sky-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-2 border-b border-sky-200 pb-2">
+                    <span class="text-sm font-bold text-sky-800">Akıllı Fiyatlandırma Motoru (Tersine Hesaplama)</span>
+                    <button onclick="calcSmartPrice()" class="bg-sky-600 text-white px-3 py-1 rounded text-xs font-semibold shadow-sm">Hesapla</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                    <label class="block text-xs font-semibold text-slate-600">Hedef Net Kâr Marjı (%)</label>
+                    <input type="number" id="m-prod-target" min="1" max="90" class="w-full border rounded p-1.5 text-sm mt-0.5">
+                    </div>
+                    <div class="flex items-end pb-1">
+                    <span class="text-[11px] text-slate-500">Varsayılan: Ayarlar'daki hedef kâr</span>
+                    </div>
+                    </div>
+                    <div id="m-prod-smart-info" class="text-xs text-slate-600 space-y-1 mb-3">
+                    Hesapla butonuna basarak birim maliyet + sabit gider payı + vergi yükü ile hedef kârınızı karşılayan satış fiyatını görün.
+                    </div>
+                    <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Karar Verilen KDV Dahil Satış Fiyatı (₺)</label>
+                    <input type="number" id="m-prod-price" class="w-full border-2 border-emerald-400 bg-white rounded p-2 text-lg font-bold text-center">
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-end gap-2">
+                <button onclick="closeModal('modal-product')" class="px-4 py-2 rounded font-semibold text-sm text-slate-500 hover:bg-slate-200">İptal</button>
+                <button onclick="saveProduct()" class="bg-slate-800 text-white px-6 py-2 rounded font-semibold text-sm">Ürünü Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: TESLİMAT ==== -->
+    <div id="modal-delivery" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
+            <div class="p-5 border-b border-slate-100 bg-sky-50 rounded-t-xl">
+                <h3 class="font-bold text-lg text-sky-900 flex items-center gap-2"><i class="ph-fill ph-check-circle"></i> Siparişi Teslim Et</h3>
+            </div>
+            <div class="p-5">
+                <input type="hidden" id="mdl-del-id">
+                <p class="text-sm text-slate-600 mb-4">Ürünler firmaya teslim edildi. Muhasebe kaydı nasıl oluşturulsun?</p>
+
+                <div class="flex flex-col gap-3 mb-4">
+                    <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition border-emerald-200 bg-emerald-50/50">
+                    <input type="radio" name="del_type" value="faturalı" class="mt-1" onchange="toggleInvInput()" checked>
+                    <div class="flex-1">
+                    <span class="block font-bold text-emerald-800 text-sm">Resmi Faturalı İşlem</span>
+                    <span class="block text-xs text-emerald-600">Gelir vergisi ve KDV hesaplarına dahil edilir.</span>
+                    <input type="text" id="mdl-del-inv" placeholder="Fatura No / E-Arşiv No" class="mt-2 w-full border rounded p-1.5 text-sm bg-white">
+                    </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition border-amber-200 bg-amber-50/50">
+                    <input type="radio" name="del_type" value="faturasız" class="mt-1" onchange="toggleInvInput()">
+                    <div>
+                    <span class="block font-bold text-amber-800 text-sm">Faturasız (Kayıtdışı Nakit)</span>
+                    <span class="block text-xs text-amber-600">Sadece nakit akışında görünür, vergiye yansımaz.</span>
+                    </div>
+                    </label>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <p class="text-xs font-bold text-slate-600 mb-2">Tahsilat Durumu</p>
+                    <div class="flex flex-col gap-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="pay_type" value="now" class="accent-emerald-600" checked onchange="togglePayInput()">
+                    <span class="text-sm text-slate-700">Tahsilat şimdi yapıldı (kasaya giriş)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="pay_type" value="later" class="accent-purple-600" onchange="togglePayInput()">
+                    <span class="text-sm text-slate-700">Tahsilat sonra yapılacak (cari hesaba alacak işlenir)</span>
+                    </label>
+                    <div id="mdl-del-due-wrap" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Vade Tarihi</label>
+                    <input type="date" id="mdl-del-due" class="w-full border rounded p-1.5 text-sm">
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-end gap-2">
+                <button onclick="closeModal('modal-delivery')" class="px-4 py-2 rounded font-semibold text-sm text-slate-500 hover:bg-slate-200">İptal</button>
+                <button onclick="confirmDelivery()" class="bg-sky-600 text-white px-6 py-2 rounded font-semibold text-sm">İşlemi Tamamla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: POS ==== -->
+    <div id="modal-pos" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col border border-slate-200">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-800 text-white rounded-t-xl">
+                <h3 class="font-bold flex items-center gap-2"><i class="ph-bold ph-shopping-cart"></i> Yeni Sipariş Oluştur (POS)</h3>
+                <button onclick="closeModal('modal-pos')" class="hover:text-rose-400"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="flex-1 flex overflow-hidden">
+                <div class="w-1/2 border-r flex flex-col p-4 bg-slate-50">
+                    <label class="text-xs font-bold text-slate-500 mb-1">Müşteri / Bayi Seçimi</label>
+                    <select id="pos-dealer" class="w-full border rounded p-2 text-sm mb-4 bg-white"></select>
+
+                    <label class="text-xs font-bold text-slate-500 mb-1">Ürün Kataloğu <span class="font-normal text-slate-400">(stok durumuyla — adet yazarak veya +/− ile ekleyin)</span></label>
+                    <div id="pos-products" class="flex-1 overflow-y-auto space-y-2"></div>
+                </div>
+                <div class="w-1/2 flex flex-col p-4">
+                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2 flex items-center gap-2">
+                    <span>Sepet İçeriği</span>
+                    <span id="pos-cart-count" class="text-[11px] font-bold bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full">0 adet</span>
+                    </h4>
+                    <div id="pos-cart" class="flex-1 overflow-y-auto space-y-2 mb-4"></div>
+                    <div class="bg-slate-100 p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between font-bold text-lg text-slate-800 mb-3">
+                    <span>Toplam Tutar:</span>
+                    <span id="pos-total">0.00 ₺</span>
+                    </div>
+                    <button onclick="submitPosOrder()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold shadow-md">Siparişi Üretime Al</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: AKSESUAR STOK EKLE ==== -->
+    <div id="modal-accessory-stock" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
+            <div class="p-4 border-b bg-purple-50 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-purple-900">Aksesuara Stok Ekle</h3>
+                <button onclick="closeModal('modal-accessory-stock')" class="text-slate-400 hover:text-rose-500"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-4 space-y-3">
+                <input type="hidden" id="m-acc-stock-id">
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Adet</label><input id="m-acc-stock-qty" type="number" min="1" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Toplam Tutar (₺)</label><input id="m-acc-stock-unit" type="number" step="0.01" min="0" class="w-full border rounded p-2 text-sm"></div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="m-acc-stock-fat" class="w-4 h-4 accent-emerald-600">
+                    <label for="m-acc-stock-fat" class="text-xs font-semibold text-slate-600">Faturalı Alım</label>
+                </div>
+                <div><label class="block text-xs font-semibold mb-1">Tarih</label><input id="m-acc-stock-date" type="date" class="w-full border rounded p-2 text-sm"></div>
+                <div><label class="block text-xs font-semibold mb-1">Not</label><input id="m-acc-stock-note" type="text" class="w-full border rounded p-2 text-sm" placeholder="Opsiyonel not"></div>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex justify-end rounded-b-xl">
+                <button onclick="saveAccessoryStock()" class="bg-purple-600 text-white px-6 py-2 rounded font-semibold text-sm">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: ÜRÜN STOK EKLE ==== -->
+    <div id="modal-product-stock" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
+            <div class="p-4 border-b bg-emerald-50 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-emerald-900">Ürüne Stok Ekle (Üretim)</h3>
+                <button onclick="closeModal('modal-product-stock')" class="text-slate-400 hover:text-rose-500"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-4 space-y-3">
+                <input type="hidden" id="m-prd-stock-id">
+                <div><label class="block text-xs font-semibold mb-1">Adet</label><input id="m-prd-stock-qty" type="number" min="1" class="w-full border rounded p-2 text-sm"></div>
+                <div><label class="block text-xs font-semibold mb-1">Tarih</label><input id="m-prd-stock-date" type="date" class="w-full border rounded p-2 text-sm"></div>
+                <div><label class="block text-xs font-semibold mb-1">Not</label><input id="m-prd-stock-note" type="text" class="w-full border rounded p-2 text-sm" placeholder="Opsiyonel not"></div>
+                <p class="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded p-2">Üretim sırasında reçetedeki filament ve aksesuarlar stoktan düşülür.</p>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex justify-end rounded-b-xl">
+                <button onclick="saveProductStock()" class="bg-emerald-600 text-white px-6 py-2 rounded font-semibold text-sm">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: SİPARİŞ DÜZENLE ==== -->
+    <div id="modal-order-edit" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-[70] p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200">
+            <div class="p-4 border-b bg-sky-50 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-sky-900">Siparişi Düzenle</h3>
+                <button onclick="closeModal('modal-order-edit')" class="text-slate-400 hover:text-rose-500"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-4 space-y-4">
+                <input type="hidden" id="m-ord-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Bayi/Müşteri</label><select id="m-ord-dealer" class="w-full border rounded p-2 text-sm"></select></div>
+                    <div><label class="block text-xs font-semibold mb-1">Durum</label><select id="m-ord-status" class="w-full border rounded p-2 text-sm"><option value="pending">Bekliyor</option><option value="delivered">Teslim Edildi</option></select></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Fatura Tipi</label><select id="m-ord-type" onchange="renderOrderEditTotals()" class="w-full border rounded p-2 text-sm"><option value="">Bekliyor</option><option value="faturalı">Faturalı</option><option value="faturasız">Faturasız</option></select></div>
+                    <div><label class="block text-xs font-semibold mb-1">Fatura No</label><input id="m-ord-inv" type="text" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Tahsilat</label><select id="m-ord-pay" class="w-full border rounded p-2 text-sm"><option value="pending">Alacak</option><option value="paid">Tahsil Edildi</option></select></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Vade Tarihi</label><input id="m-ord-due" type="date" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Sipariş Tarihi</label><input id="m-ord-date" type="date" class="w-full border rounded p-2 text-sm"></div>
+                </div>
+                <div class="border rounded-lg p-3">
+                    <div class="flex items-center justify-between mb-2">
+                    <b class="text-sm text-slate-700">Sipariş Kalemleri</b>
+                    <button onclick="addOrderEditItem()" class="text-xs bg-sky-600 text-white px-2 py-1 rounded">+ Kalem</button>
+                    </div>
+                    <div id="m-ord-items" class="space-y-2"></div>
+                </div>
+                <div class="bg-slate-50 border rounded p-3 text-sm">
+                    <div class="flex justify-between"><span>Toplam (KDV Dahil):</span><b id="m-ord-total">0 ₺</b></div>
+                    <div class="flex justify-between"><span>Matrah (KDV Hariç):</span><b id="m-ord-net">0 ₺</b></div>
+                    <div class="flex justify-between"><span>KDV:</span><b id="m-ord-kdv">0 ₺</b></div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex justify-end gap-2 rounded-b-xl">
+                <button onclick="closeModal('modal-order-edit')" class="px-4 py-2 rounded text-sm text-slate-600">İptal</button>
+                <button onclick="saveOrderEdit()" class="bg-sky-600 text-white px-6 py-2 rounded text-sm font-semibold">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: GEÇMİŞ ==== -->
+    <div id="modal-history" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-800 text-white rounded-t-xl">
+                <h3 class="font-bold text-lg" id="hist-title">Geçmiş Kayıtlar</h3>
+                <button onclick="closeModal('modal-history')" class="hover:text-rose-400"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="flex-1 overflow-auto p-5">
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-slate-100 text-slate-600" id="hist-thead"></thead>
+                    <tbody class="divide-y divide-slate-100" id="hist-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: DÜZENLE ==== -->
+    <div id="modal-edit" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
+            <div class="p-4 border-b bg-blue-50 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-blue-900 flex items-center gap-2"><i class="ph-bold ph-pencil-simple"></i> Kaydı Düzenle</h3>
+                <button onclick="closeModal('modal-edit')" class="text-slate-400 hover:text-rose-500"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-5" id="edit-form">
+                <!-- JS Injected -->
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex justify-end rounded-b-xl">
+                <button onclick="saveEdit()" class="bg-blue-600 text-white px-6 py-2 rounded font-semibold text-sm hover:bg-blue-700">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: ONAY ==== -->
+    <div id="modal-confirm" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[60] p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200">
+            <div class="p-5 text-center">
+                <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-bold ph-warning text-2xl"></i></div>
+                <p class="font-semibold text-slate-800 mb-1">Emin misiniz?</p>
+                <p class="text-sm text-slate-500" id="confirm-msg">Bu işlem geri alınamaz.</p>
+            </div>
+            <div class="p-4 border-t bg-slate-50 rounded-b-xl flex justify-end gap-2">
+                <button onclick="closeModal('modal-confirm')" class="px-4 py-2 rounded font-semibold text-sm text-slate-500 hover:bg-slate-200">Vazgeç</button>
+                <button onclick="doConfirm()" class="bg-rose-600 text-white px-6 py-2 rounded font-semibold text-sm">Evet, Sil</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ====
+        //  METE 3D STUDIO — ERP & MUHASEBE PRO
+        //  Tek dosyalık çözüm: Firebase Firestore + localStorage yedek
+        //  Düzeltilmiş tek sürüm (yinelenen fonksiyonlar kaldırıldı)
+        //  POS: adet girişi (− / kutu / +) + sepet toplam adet göstergesi
+        // ====
+
+        // --- Varsayılan Firebase Config (Ayarlar'dan değiştirilebilir) ---
+        const DEFAULT_FIREBASE = {
+            apiKey: 'AIzaSyAUIrw_9NTjYVYEvGlUu1l-qjA-62wjcP4',
+            authDomain: 'dtakip-3ff56.firebaseapp.com',
+            projectId: 'dtakip-3ff56',
+            storageBucket: 'dtakip-3ff56.firebasestorage.app',
+            messagingSenderId: '761520994966',
+            appId: '1:761520994966:web:e56a581a985b63e3d960b7',
+            collection: 'ERP_Data',
+            doc: 'Main_Database_V51'
+        };
+        const LS_KEY = 'mete3d_state_v2';
+        const LS_FB = 'mete3d_firebase_cfg';
+
+        let state = null;
+        let dbRef = null;
+        let currentRecipe = [];
+        let posCart = [];
+        let currentHistoryType = '';
+        let editTarget = null;   // {type, id}
+        let confirmAction = null;
+        let currentYear = new Date().getFullYear();
+        let orderEditItems = [];
+
+        const MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+
+        // --- Yardımcılar ---
+        const $ = id => document.getElementById(id);
+        const fmt = num => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(num || 0);
+        const fmtN = num => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(num || 0);
+        const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const todayStr = () => new Date().toISOString().slice(0,10);
+
+        // KDV dahil tutarı matrah + KDV olarak böler
+        function kdvBreakdown(totalIncl) {
+            const rate = (state?.settings?.kdvRate || 20) / 100;
+            const gross = parseFloat(totalIncl) || 0;
+            const matrah = gross / (1 + rate);
+            const kdv = gross - matrah;
+            return { gross, matrah, kdv };
+        }
+
+        // Vergi dilimlerini üst sınır artan sırada düzenler (null = sonsuz, en sona)
+        function sortBrackets(br) {
+            if (!Array.isArray(br)) return br;
+            return br.sort((a, b) => (a.limit === null ? Infinity : a.limit) - (b.limit === null ? Infinity : b.limit));
+        }
+
+        // --- Varsayılan Durum ---
+        function defaultState() {
+            return {
+                filament: { totalGr: 0, totalCost: 0 },
+                filamentLogs: [],
+                accessories: [],
+                accessoryLogs: [],
+                models: [],
+                productStockLogs: [],
+                dealers: [],
+                orders: [],
+                transactions: [],
+                assets: [],
+                settings: {
+                    musavir: 4500, kdvDamga: 791, muhtasarDamga: 791, geciciDamga: 791,
+                    kdvRate: 20, targetProfit: 30, lowFilament: 500, lowAccessory: 5,
+                    // NOT: Bu varsayılan dilimler örnekidir; güncel resmi tutarları Ayarlar'dan kontrol edin.
+                    brackets: [
+                        { limit: 10000, rate: 15 },
+                        { limit: 40000, rate: 20 },
+                        { limit: 190000, rate: 27 },
+                        { limit: 530000, rate: 35 },
+                        { limit: null, rate: 40 }
+                    ]
+                }
+            };
+        }
+
+        // --- Eski verileri yeni yapıya uyarla (migrasyon) ---
+        function normalizeState(raw) {
+            const def = defaultState();
+            const s = raw && typeof raw === 'object' ? raw : {};
+            const st = { ...def, ...s };
+            st.filament = { totalGr: 0, totalCost: 0, ...(s.filament || {}) };
+            ['filamentLogs','accessories','accessoryLogs','models','productStockLogs','dealers','orders','transactions','assets'].forEach(k => {
+                if (!Array.isArray(st[k])) st[k] = [];
+            });
+            st.settings = { ...def.settings, ...(s.settings || {}) };
+            if (!Array.isArray(st.settings.brackets) || !st.settings.brackets.length) st.settings.brackets = def.settings.brackets;
+            st.settings.brackets = sortBrackets(st.settings.brackets);
+
+            st.filamentLogs.forEach(l => {
+                if (l.faturali === undefined) l.faturali = false;
+                const br = kdvBreakdown(l.pr || 0);
+                l.matrah = l.faturali ? br.matrah : (l.pr || 0);
+                l.kdv = l.faturali ? br.kdv : 0;
+                l.total = l.pr || 0;
+            });
+
+            st.accessories.forEach(a => {
+                if (a.qty === undefined || isNaN(a.qty)) a.qty = 0;
+                if (a.totalCost === undefined || isNaN(a.totalCost)) a.totalCost = 0;
+            });
+
+            st.accessoryLogs.forEach(l => {
+                if (l.faturali === undefined) l.faturali = false;
+                l.date = l.date || new Date().toISOString();
+                l.note = l.note || '';
+                l.unitPrice = l.unitPrice ?? ((l.qty > 0) ? ((l.price || 0) / l.qty) : 0);
+                l.total = l.total ?? l.price ?? 0;
+                l.price = l.total;
+                const br = kdvBreakdown(l.total || 0);
+                l.matrah = l.faturali ? br.matrah : (l.total || 0);
+                l.kdv = l.faturali ? br.kdv : 0;
+            });
+
+            st.models.forEach(m => {
+                if (m.stock === undefined || isNaN(m.stock)) m.stock = 0;
+            });
+
+            st.productStockLogs.forEach(l => {
+                l.date = l.date || new Date().toISOString();
+                l.note = l.note || '';
+            });
+
+            st.dealers.forEach(d => {
+                if (!d.category) d.category = d.type || 'Bireysel Müşteri';
+                d.type = d.category;
+            });
+
+            st.orders.forEach(o => {
+                if (!Array.isArray(o.items)) o.items = [];
+                o.items = o.items.map(it => ({
+                    mId: it.mId,
+                    qty: parseFloat(it.qty) || 0,
+                    unitPrice: it.unitPrice ?? (st.models.find(m => m.id === it.mId)?.price || 0)
+                }));
+                if (o.paymentStatus === undefined) o.paymentStatus = o.status === 'delivered' ? 'paid' : 'pending';
+                if (o.dueDate === undefined) o.dueDate = '';
+                if (o.paidDate === undefined) o.paidDate = '';
+                if (o.deliveryDate === undefined) o.deliveryDate = '';
+                if (o.stockDeducted === undefined) o.stockDeducted = true;
+                if (o.status === 'pending' && o.type === undefined) o.type = '';
+                const total = (o.items || []).reduce((s, it) => s + ((it.qty || 0) * (it.unitPrice || 0)), 0);
+                if (!(o.total >= 0)) o.total = total;
+                // KDV yalnızca faturalı siparişlerde ayrıştırılır (faturasız/bekleyen siparişte KDV 0'dır)
+                if (o.type === 'faturalı') {
+                    const br = kdvBreakdown(o.total || 0);
+                    o.matrah = br.matrah;
+                    o.kdv = br.kdv;
+                } else {
+                    o.matrah = o.total || 0;
+                    o.kdv = 0;
+                }
+            });
+
+            st.transactions.forEach(t => { if (t.faturali === undefined) t.faturali = false; if (t.kdv === undefined) t.kdv = 0; });
+            return st;
+        }
+
+        // --- Firebase ---
+        function getFbCfg() {
+            try { const c = JSON.parse(localStorage.getItem(LS_FB)); if (c && c.apiKey) return c; } catch (e) {}
+            return DEFAULT_FIREBASE;
+        }
+
+        function setSync(status) {
+            const el = $('sync-status');
+            if (status === 'ok') { el.innerHTML = '<i class="ph-fill ph-cloud-check text-sm"></i> Eşitlendi'; el.className = 'flex items-center gap-2 text-emerald-600 bg-emerald-50 p-2 rounded'; }
+            else if (status === 'saving') { el.innerHTML = '<i class="ph ph-spinner-gap animate-spin text-sm"></i> Kaydediliyor...'; el.className = 'flex items-center gap-2 text-amber-600 bg-amber-50 p-2 rounded'; }
+            else { el.innerHTML = '<i class="ph-bold ph-warning text-sm"></i> Çevrimdışı (yerel yedek aktif)'; el.className = 'flex items-center gap-2 text-rose-600 bg-rose-50 p-2 rounded'; }
+        }
+
+        function saveState() {
+            if (!state) return;
+            try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+            if (dbRef) {
+                setSync('saving');
+                dbRef.set(state).then(() => setSync('ok')).catch(() => setSync('off'));
+            }
+        }
+
+        function loadLocalFallback() {
+            try {
+                const local = localStorage.getItem(LS_KEY);
+                state = normalizeState(local ? JSON.parse(local) : null);
+            } catch (e) { state = normalizeState(null); }
+            renderAll();
+        }
+
+        function initFirebase() {
+            const cfg = getFbCfg();
+            try {
+                firebase.initializeApp(cfg);
+                dbRef = firebase.firestore().collection(cfg.collection || 'ERP_Data').doc(cfg.doc || 'Main_Database_V51');
+                dbRef.onSnapshot(doc => {
+                    if (doc.exists) {
+                        state = normalizeState(doc.data());
+                        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+                        setSync('ok');
+                        renderAll();
+                    } else {
+                        const local = localStorage.getItem(LS_KEY);
+                        if (local) { state = normalizeState(JSON.parse(local)); saveState(); }
+                        else { state = normalizeState(null); saveState(); }
+                        renderAll();
+                    }
+                }, err => { setSync('off'); loadLocalFallback(); });
+            } catch (e) { setSync('off'); loadLocalFallback(); }
+        }
+
+        // --- Navigasyon ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
+            const activeTab = $(tabId);
+            activeTab.classList.remove('hidden');
+            activeTab.classList.add('flex');
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('bg-sky-600', 'text-white');
+                el.classList.add('hover:bg-slate-800', 'hover:text-white');
+            });
+            const btn = $('btn-' + tabId);
+            btn.classList.add('bg-sky-600', 'text-white');
+            btn.classList.remove('hover:bg-slate-800');
+        }
+
+        function openModal(id) { $(id).classList.replace('hidden', 'flex'); }
+        function closeModal(id) { $(id).classList.replace('flex', 'hidden'); }
+
+        // --- Onay Modalı (confirm yerine) ---
+        function askConfirm(msg, fn) {
+            confirmAction = fn;
+            $('confirm-msg').innerText = msg;
+            openModal('modal-confirm');
+        }
+        function doConfirm() {
+            if (confirmAction) { const fn = confirmAction; confirmAction = null; closeModal('modal-confirm'); fn(); }
+        }
+
+        // ====
+        //  TAB 1: HAMMADDE & AKSESUAR
+        // ====
+        function addFilament(e) {
+            e.preventDefault();
+            const gr = parseFloat($('inp-fil-qty').value);
+            const pr = parseFloat($('inp-fil-price').value);
+            if (!(gr > 0) || !(pr >= 0)) return alert('Geçerli miktar ve tutar girin.');
+            const faturali = $('inp-fil-faturali').checked;
+            const br = kdvBreakdown(pr);
+            state.filament.totalGr += gr;
+            state.filament.totalCost += pr;
+            state.filamentLogs.push({ id: 'FL' + Date.now(), gr, pr, total: pr, faturali, matrah: faturali ? br.matrah : pr, kdv: faturali ? br.kdv : 0, date: new Date().toISOString() });
+            saveState(); renderAll(); e.target.reset();
+        }
+
+        function openAccessoryModal() {
+            $('m-acc-name').value = ''; $('m-acc-qty').value = ''; $('m-acc-price').value = ''; $('m-acc-faturali').checked = false;
+            openModal('modal-accessory');
+        }
+
+        function saveAccessory() {
+            const name = $('m-acc-name').value.trim();
+            const qty = parseInt($('m-acc-qty').value);
+            const price = parseFloat($('m-acc-price').value);
+            if (!name || isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) return alert('Lütfen bilgileri eksiksiz doldurun.');
+            const faturali = $('m-acc-faturali').checked;
+            const br = kdvBreakdown(price);
+            const id = 'ACC' + Date.now();
+            state.accessories.push({ id, name, qty, totalCost: price });
+            state.accessoryLogs.push({ id: 'AL' + Date.now(), accId: id, name, qty, unitPrice: qty > 0 ? price / qty : 0, total: price, price, faturali, matrah: faturali ? br.matrah : price, kdv: faturali ? br.kdv : 0, date: new Date().toISOString(), note: 'İlk stok' });
+            saveState(); renderAll(); closeModal('modal-accessory');
+        }
+
+        function openAccessoryStockModal(accId) {
+            $('m-acc-stock-id').value = accId;
+            $('m-acc-stock-qty').value = '';
+            $('m-acc-stock-unit').value = '';
+            $('m-acc-stock-fat').checked = false;
+            $('m-acc-stock-date').value = todayStr();
+            $('m-acc-stock-note').value = '';
+            openModal('modal-accessory-stock');
+        }
+
+        function saveAccessoryStock() {
+            const accId = $('m-acc-stock-id').value;
+            const acc = state.accessories.find(a => a.id === accId);
+            if (!acc) return alert('Aksesuar bulunamadı.');
+
+            const qty = parseInt($('m-acc-stock-qty').value);
+            const total = parseFloat($('m-acc-stock-unit').value); // Toplam tutar
+            const faturali = $('m-acc-stock-fat').checked;
+            const dateVal = $('m-acc-stock-date').value || todayStr();
+            const note = $('m-acc-stock-note').value.trim();
+
+            if (!(qty > 0) || !(total >= 0)) return alert('Adet ve toplam tutar geçerli olmalıdır.');
+
+            const unitPrice = total / qty;
+            const br = kdvBreakdown(total);
+
+            acc.qty += qty;
+            acc.totalCost += total;
+
+            state.accessoryLogs.push({
+                id: 'AL' + Date.now(), accId, name: acc.name, qty, unitPrice, total, price: total, faturali,
+                matrah: faturali ? br.matrah : total, kdv: faturali ? br.kdv : 0,
+                date: new Date(dateVal).toISOString(), note
+            });
+            saveState(); renderAll(); closeModal('modal-accessory-stock');
+        }
+
+        // ====
+        //  TAB 2: ÜRÜNLER & AKILLI FİYATLANDIRMA
+        // ====
+        function openProductModal(prodId) {
+            currentRecipe = [];
+            $('m-prod-id').value = '';
+            $('m-prod-title').innerText = 'Yeni Ürün Ekle';
+            $('m-prod-name').value = ''; $('m-prod-fil').value = ''; $('m-prod-price').value = '';
+            $('m-prod-target').value = state.settings.targetProfit || 30;
+            $('m-prod-smart-info').innerHTML = 'Hesapla butonuna basarak birim maliyet + sabit gider payı + vergi yükü ile hedef kârınızı karşılayan satış fiyatını görün.';
+
+            if (prodId) {
+                const m = state.models.find(x => x.id === prodId);
+                if (m) {
+                    $('m-prod-id').value = m.id;
+                    $('m-prod-title').innerText = 'Ürünü Düzenle: ' + m.name;
+                    $('m-prod-name').value = m.name;
+                    $('m-prod-fil').value = m.filGr;
+                    $('m-prod-price').value = m.price;
+                    currentRecipe = (m.recipe || []).map(r => ({ ...r }));
+                }
+            }
+            updateRecipeUI();
+            const sel = $('m-prod-acc-sel');
+            sel.innerHTML = '<option value="">Aksesuar Seç...</option>';
+            state.accessories.forEach(a => sel.innerHTML += `<option value="${a.id}">${a.name} (stok: ${a.qty})</option>`);
+            openModal('modal-product');
+        }
+
+        function addRecipeItem() {
+            const id = $('m-prod-acc-sel').value;
+            const qty = parseInt($('m-prod-acc-qty').value);
+            if (!id || isNaN(qty) || qty <= 0) return;
+            const a = state.accessories.find(x => x.id === id);
+            if (!a) return;
+            currentRecipe.push({ id, name: a.name, qty });
+            updateRecipeUI();
+            $('m-prod-acc-qty').value = '';
+        }
+
+        function updateRecipeUI() {
+            $('m-prod-recipe').innerHTML = currentRecipe.map((r, i) => `
+                <div class="flex justify-between items-center bg-white p-1.5 rounded border text-xs">
+                    <span>${r.qty}x ${esc(r.name)}</span>
+                    <button onclick="currentRecipe.splice(${i},1); updateRecipeUI()" class="text-rose-500 font-bold px-1">X</button>
+                </div>
+            `).join('') || '<p class="text-xs text-slate-400">Henüz aksesuar eklenmedi.</p>';
+        }
+
+        // --- Tersine Hesaplama: hedef net kâr marjına göre satış fiyatı ---
+        function calcSmartPrice() {
+            const filGr = parseFloat($('m-prod-fil').value) || 0;
+            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            let materialCost = filGr * filAvg;
+            currentRecipe.forEach(r => {
+                const acc = state.accessories.find(a => a.id === r.id);
+                const aAvg = (acc && acc.qty > 0) ? (acc.totalCost / acc.qty) : 0;
+                materialCost += (r.qty * aAvg);
+            });
+
+            const s = state.settings;
+            const yearlyFixed = (s.musavir * 12) + (s.kdvDamga * 12) + (s.muhtasarDamga * 12) + (s.geciciDamga * 4);
+            const numProducts = Math.max(state.models.length, 1);
+            const overheadPerUnit = yearlyFixed / (numProducts * 100);
+            const totalCost = materialCost + overheadPerUnit;
+
+            const fin = finSummary();
+            const bracketRate = fin.bracketRate;
+            const target = (parseFloat($('m-prod-target').value) || s.targetProfit || 30) / 100;
+            const kdvRate = s.kdvRate / 100;
+
+            const denom = (1 - bracketRate / 100) - target;
+            if (denom <= 0) {
+                $('m-prod-smart-info').innerHTML = '<div class="text-rose-600 font-bold">Hedef kâr marjı, vergi diliminizle birlikte mümkün değil. Hedefi düşürün (örn. %' + Math.max(1, Math.floor((1 - bracketRate / 100) * 100) - 5) + ').</div>';
+                return;
+            }
+            const priceNet = totalCost * (1 - bracketRate / 100) / denom;
+            const priceKdv = priceNet * (1 + kdvRate);
+            const incomeTax = (priceNet - totalCost) * bracketRate / 100;
+            const kdvAmt = priceNet * kdvRate;
+            const netProfit = priceNet - totalCost - incomeTax;
+            const beNet = totalCost / (1 - bracketRate / 100);
+            const beKdv = beNet * (1 + kdvRate);
+
+            $('m-prod-smart-info').innerHTML = `
+                <div class="flex justify-between"><span class="text-slate-500">Saf Malzeme Maliyeti:</span> <b>${fmt(materialCost)}</b></div>
+                <div class="flex justify-between"><span class="text-slate-500">Sabit Gider Payı (${numProducts} ürün × 100 adet):</span> <b>${fmt(overheadPerUnit)}</b></div>
+                <div class="flex justify-between text-sky-800 font-bold border-t border-sky-200 mt-1 pt-1"><span>Toplam Birim Maliyet:</span> <span>${fmt(totalCost)}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Gelir Vergisi Yükü (%${bracketRate}):</span> <b class="text-amber-700">${fmt(incomeTax)}</b></div>
+                <div class="flex justify-between"><span class="text-slate-500">KDV (%${s.kdvRate}):</span> <b class="text-sky-700">${fmt(kdvAmt)}</b></div>
+                <div class="flex justify-between"><span class="text-slate-500">Hedef Net Kâr:</span> <b class="text-emerald-700">${fmt(netProfit)}</b></div>
+                <div class="mt-2 bg-emerald-50 border border-emerald-200 p-2 rounded text-emerald-800">
+                    💡 %${(target*100).toFixed(0)} net kâr için <b>KDV dahil ${fmt(priceKdv)}</b> satmalısınız.
+                    <div class="text-[10px] text-slate-500 mt-1">Zarar etmemek için minimum: ${fmt(beKdv)}</div>
+                </div>
+            `;
+            $('m-prod-price').value = Math.ceil(priceKdv);
+        }
+
+        function saveProduct() {
+            const id = $('m-prod-id').value;
+            const name = $('m-prod-name').value.trim();
+            const filGr = parseFloat($('m-prod-fil').value);
+            const price = parseFloat($('m-prod-price').value);
+            if (!name || isNaN(filGr) || isNaN(price) || price <= 0) return alert('Eksik veya hatalı bilgi.');
+            if (id) {
+                const m = state.models.find(x => x.id === id);
+                if (m) { m.name = name; m.filGr = filGr; m.price = price; m.recipe = [...currentRecipe]; }
+            } else {
+                state.models.push({ id: 'PRD' + Date.now(), name, filGr, price, recipe: [...currentRecipe], stock: 0, date: new Date().toISOString() });
+            }
+            saveState(); renderAll(); closeModal('modal-product');
+        }
+
+        // --- Üretim: hammadde tüketim yardımcıları ---
+        // Verilen model ve adet için reçeteye göre hammadde yeterliliğini kontrol eder, yeterliyse stoktan düşer.
+        function consumeMaterials(m, qty) {
+            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            const usedFil = (m.filGr || 0) * qty;
+            if (usedFil > state.filament.totalGr) return 'Yetersiz filament stoğu! Gerekli: ' + usedFil + ' gr, Mevcut: ' + fmtN(state.filament.totalGr) + ' gr';
+            for (const r of (m.recipe || [])) {
+                const a = state.accessories.find(x => x.id === r.id);
+                if (!a || a.qty < (r.qty * qty)) return 'Yetersiz aksesuar stoğu: ' + (a ? a.name : 'Bilinmeyen') + ' (Gerekli: ' + (r.qty * qty) + ', Mevcut: ' + (a ? a.qty : 0) + ')';
+            }
+            state.filament.totalGr -= usedFil;
+            state.filament.totalCost -= (usedFil * filAvg);
+            (m.recipe || []).forEach(r => {
+                const acc = state.accessories.find(a => a.id === r.id);
+                if (acc) {
+                    const avg = acc.qty > 0 ? (acc.totalCost / acc.qty) : 0;
+                    const used = r.qty * qty;
+                    acc.qty -= used;
+                    acc.totalCost -= (used * avg);
+                    if (acc.qty < 0) acc.qty = 0;
+                    if (acc.totalCost < 0) acc.totalCost = 0;
+                }
+            });
+            return null; // hata yok
+        }
+
+        // Üretim iptal/düzeltme: hammaddeyi stoğa geri ekler (ortalama maliyetle)
+        function restoreMaterials(m, qty) {
+            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            const usedFil = (m.filGr || 0) * qty;
+            state.filament.totalGr += usedFil;
+            state.filament.totalCost += (usedFil * filAvg);
+            (m.recipe || []).forEach(r => {
+                const acc = state.accessories.find(a => a.id === r.id);
+                if (acc) {
+                    const avg = acc.qty > 0 ? (acc.totalCost / acc.qty) : 0;
+                    const used = r.qty * qty;
+                    acc.qty += used;
+                    acc.totalCost += (used * avg);
+                }
+            });
+        }
+
+        function openProductStockModal(prodId) {
+            $('m-prd-stock-id').value = prodId;
+            $('m-prd-stock-qty').value = '';
+            $('m-prd-stock-date').value = todayStr();
+            $('m-prd-stock-note').value = '';
+            openModal('modal-product-stock');
+        }
+
+        function saveProductStock() {
+            const productId = $('m-prd-stock-id').value;
+            const m = state.models.find(x => x.id === productId);
+            if (!m) return alert('Ürün bulunamadı.');
+            const qty = parseInt($('m-prd-stock-qty').value);
+            const dateVal = $('m-prd-stock-date').value || todayStr();
+            const note = $('m-prd-stock-note').value.trim();
+            if (!(qty > 0)) return alert('Geçerli adet girin.');
+            // Üretim: hammadde tüketimi
+            const err = consumeMaterials(m, qty);
+            if (err) return alert(err);
+            m.stock = (m.stock || 0) + qty;
+            state.productStockLogs.push({ id: 'PSL' + Date.now(), productId, qty, date: new Date(dateVal).toISOString(), note });
+            saveState(); renderAll(); closeModal('modal-product-stock');
+        }
+
+        // ====
+        //  TAB 3: BAYİLER
+        // ====
+        function addDealer(e) {
+            e.preventDefault();
+            const name = $('inp-dealer-name').value.trim();
+            const category = $('inp-dealer-category').value || 'Bireysel Müşteri';
+            if (!name) return alert('Bayi/müşteri adı zorunludur.');
+            state.dealers.push({ id: 'DLR' + Date.now(), name, category, type: category, date: new Date().toISOString() });
+            saveState(); renderAll(); e.target.reset();
+        }
+
+        function deleteDealer(id) {
+            state.dealers = state.dealers.filter(d => d.id !== id);
+            saveState(); renderAll();
+        }
+
+        function deleteProduct(id) {
+            state.models = state.models.filter(m => m.id !== id);
+            saveState(); renderAll();
+        }
+
+        function deleteAccessory(id) {
+            const acc = state.accessories.find(a => a.id === id);
+            if (!acc) return;
+            state.accessories = state.accessories.filter(a => a.id !== id);
+            state.accessoryLogs = state.accessoryLogs.filter(l => l.accId !== id);
+            state.models.forEach(m => { m.recipe = (m.recipe || []).filter(r => r.id !== id); });
+            saveState(); renderAll();
+        }
+
+        function deleteAsset(id) {
+            state.assets = state.assets.filter(a => a.id !== id);
+            saveState(); renderAll();
+        }
+
+        // ====
+        //  TAB 4: KANBAN & POS
+        // ====
+        function openOrderModal() {
+            posCart = [];
+            const dSel = $('pos-dealer');
+            dSel.innerHTML = state.dealers.map(d => `<option value="${d.id}">${esc(d.name)} (${esc(d.category || d.type || 'Bireysel Müşteri')})</option>`).join('') || '<option value="">Önce bayi ekleyin...</option>';
+            renderPosProducts();
+            renderCart();
+            openModal('modal-pos');
+        }
+
+        // POS ürün listesi: her ürünün sağında − / adet kutusu / + bulunur.
+        // Kutuya doğrudan adet yazılabilir; +/− ile artırılıp azaltılabilir.
+        function renderPosProducts() {
+            const sortedModels = [...state.models].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+            $('pos-products').innerHTML = sortedModels.map(m => {
+                const st = m.stock || 0;
+                const inCart = posCart.find(c => c.mId === m.id);
+                const cartQty = inCart ? inCart.qty : 0;
+                const ok = st > 0;
+                const canMinus = cartQty > 0;
+                const canPlus = ok && cartQty < st;
+                return `
+                <div class="bg-white p-2 rounded border shadow-sm ${ok ? '' : 'opacity-60'}">
+                    <div class="flex justify-between items-center gap-2">
+                    <div class="min-w-0">
+                    <div class="font-bold text-sm text-slate-800">${esc(m.name)}</div>
+                    <div class="text-xs text-emerald-600 font-semibold">${(m.price || 0).toFixed(2)} ₺</div>
+                    <div class="text-[10px] ${ok ? 'text-slate-500' : 'text-rose-500 font-semibold'}">Mevcut ürün stoğu: ${st} adet</div>
+                    </div>
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                    <button onclick="setCartQty('${m.id}', ${cartQty - 1})" ${canMinus ? '' : 'disabled'}
+                    class="w-7 h-7 rounded font-bold text-sm leading-none ${canMinus ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">−</button>
+                    <input type="number" min="0" max="${st}" value="${cartQty}"
+                    onchange="setCartQty('${m.id}', this.value)"
+                    class="w-14 text-center border border-slate-300 rounded p-1 text-sm font-bold focus:border-sky-500 outline-none" ${ok ? '' : 'disabled'}>
+                    <button onclick="setCartQty('${m.id}', ${cartQty + 1})" ${canPlus ? '' : 'disabled'}
+                    class="w-7 h-7 rounded font-bold text-sm leading-none ${canPlus ? 'bg-sky-100 hover:bg-sky-200 text-sky-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">+</button>
+                    </div>
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Henüz ürün eklenmedi.</p>';
+        }
+
+        // Ürünün sepet adetini ayarlar: +/− butonları, kutuya yazılan adet ve
+        // sepetten silme işlemlerinin tamamı bu fonksiyon üzerinden yürür.
+        function setCartQty(mId, qty) {
+            const m = state.models.find(x => x.id === mId);
+            if (!m) return;
+            qty = parseInt(qty);
+            if (isNaN(qty) || qty < 0) qty = 0;
+            const stock = m.stock || 0;
+            if (qty > stock) {
+                alert('Bu ürün için yeterli stok yok. Mevcut ürün stoğu: ' + stock + ' adet');
+                qty = stock;
+            }
+            const ex = posCart.find(c => c.mId === mId);
+            if (qty <= 0) {
+                posCart = posCart.filter(c => c.mId !== mId);
+            } else if (ex) {
+                ex.qty = qty;
+            } else {
+                posCart.push({ mId, qty, unitPrice: m.price || 0 });
+            }
+            renderCart();
+            renderPosProducts(); // adet kutularını ve +/− durumlarını senkronize et
+        }
+
+        function renderCart() {
+            let tot = 0, totQty = 0;
+            $('pos-cart').innerHTML = posCart.map(c => {
+                const m = state.models.find(x => x.id === c.mId);
+                if (!m) return '';
+                const unitPrice = c.unitPrice ?? m.price ?? 0;
+                const lineTot = unitPrice * c.qty; tot += lineTot; totQty += (parseFloat(c.qty) || 0);
+                return `
+                <div class="flex justify-between items-center text-sm border-b py-1">
+                    <span>${c.qty}x ${esc(m.name)}</span>
+                    <div class="flex items-center gap-2">
+                    <span class="font-semibold">${lineTot.toFixed(2)} ₺</span>
+                    <button onclick="setCartQty('${m.id}', 0)" class="text-rose-500 font-bold px-1">X</button>
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Sepet boş.</p>';
+            $('pos-total').innerText = tot.toFixed(2) + ' ₺';
+            // Sepet İçeriği başlığındaki toplam adet rozeti
+            if ($('pos-cart-count')) $('pos-cart-count').innerText = fmtN(totQty) + ' adet';
+        }
+
+        function submitPosOrder() {
+            if (!posCart.length) return alert('Sepet boş.');
+            const locId = $('pos-dealer').value;
+            if (!locId) return alert('Lütfen müşteri / bayi seçin.');
+
+            // Satışta yalnızca ÜRÜN stoğu düşer (hammadde tüketimi üretim anında yapılır)
+            for (const c of posCart) {
+                const m = state.models.find(x => x.id === c.mId);
+                if (!m) return alert('Sepette geçersiz ürün var.');
+                if ((m.stock || 0) < c.qty) return alert(`${m.name} için ürün stoğu yetersiz. Mevcut: ${m.stock || 0}`);
+            }
+
+            let tot = 0;
+            const items = posCart.map(c => {
+                const m = state.models.find(x => x.id === c.mId);
+                const unitPrice = c.unitPrice ?? m.price ?? 0;
+                const qty = parseFloat(c.qty) || 0;
+                tot += unitPrice * qty;
+                m.stock = (m.stock || 0) - qty;
+                return { mId: c.mId, qty, unitPrice };
+            });
+
+            // Sipariş oluşturma anında henüz fatura yok: matrah = tutar, KDV = 0.
+            // Fatura tipi, teslim anında (veya düzenleme penceresinden) belirlenir.
+            state.orders.push({
+                id: 'ORD' + Date.now(), locId, items, total: tot, matrah: tot, kdv: 0,
+                status: 'pending', type: '', invoiceNo: '',
+                date: new Date().toISOString(), deliveryDate: '', paymentStatus: 'pending', dueDate: '', paidDate: '',
+                stockDeducted: true
+            });
+            saveState(); renderAll(); closeModal('modal-pos');
+        }
+
+        function toggleInvInput() {
+            const t = document.querySelector('input[name="del_type"]:checked').value;
+            $('mdl-del-inv').style.display = t === 'faturalı' ? 'block' : 'none';
+        }
+        function togglePayInput() {
+            const t = document.querySelector('input[name="pay_type"]:checked').value;
+            $('mdl-del-due-wrap').classList.toggle('hidden', t !== 'later');
+        }
+
+        function promptDelivery(oId) {
+            $('mdl-del-id').value = oId;
+            document.querySelector('input[name="del_type"][value="faturalı"]').checked = true;
+            document.querySelector('input[name="pay_type"][value="now"]').checked = true;
+            toggleInvInput(); togglePayInput();
+            $('mdl-del-inv').value = ''; $('mdl-del-due').value = '';
+            openModal('modal-delivery');
+        }
+
+        function confirmDelivery() {
+            const oId = $('mdl-del-id').value;
+            const type = document.querySelector('input[name="del_type"]:checked').value;
+            const inv = $('mdl-del-inv').value.trim();
+            const payType = document.querySelector('input[name="pay_type"]:checked').value;
+            const due = $('mdl-del-due').value;
+            if (type === 'faturalı' && !inv) return alert('Lütfen fatura no girin.');
+            if (payType === 'later' && !due) return alert('Lütfen vade tarihi seçin.');
+
+            const o = state.orders.find(x => x.id === oId);
+            if (o) {
+                o.status = 'delivered';
+                o.type = type;
+                o.invoiceNo = type === 'faturalı' ? inv : '';
+                o.deliveryDate = new Date().toISOString();
+                o.paymentStatus = payType === 'now' ? 'paid' : 'pending';
+                o.paidDate = payType === 'now' ? new Date().toISOString() : '';
+                o.dueDate = payType === 'later' ? due : '';
+
+                // Fatura tipine göre KDV'yi hesapla
+                const baseMatrah = (o.items || []).reduce((s, it) => s + ((it.qty || 0) * (it.unitPrice || 0)), 0);
+                const rate = (state?.settings?.kdvRate || 20) / 100;
+                o.matrah = baseMatrah;
+                o.kdv = type === 'faturalı' ? baseMatrah * rate : 0;
+                o.total = o.matrah + o.kdv;
+            }
+            saveState(); renderAll(); closeModal('modal-delivery');
+        }
+
+        // --- Cari hesap: tahsilat / tahsilat geri alma ---
+        function collectPayment(oId) {
+            const o = state.orders.find(x => x.id === oId);
+            if (!o) return;
+            o.paymentStatus = 'paid';
+            o.paidDate = new Date().toISOString();
+            o.dueDate = '';
+            saveState(); renderAll();
+        }
+
+        function undoCollectPayment(oId) {
+            const o = state.orders.find(x => x.id === oId);
+            if (!o || o.status !== 'delivered' || o.paymentStatus !== 'paid') return;
+            o.paymentStatus = 'pending';
+            o.paidDate = '';
+            if (!o.dueDate) o.dueDate = todayStr();
+            saveState(); renderAll();
+        }
+
+        function undoDelivery(oId) {
+            const o = state.orders.find(x => x.id === oId);
+            if (!o || o.status !== 'delivered') return;
+            // Teslim geri alındığında yalnızca ürün stoğu iade edilir (hammadde üretim anında tüketilmişti)
+            if (o.stockDeducted) {
+                const needs = {};
+                (o.items || []).forEach(it => { needs[it.mId] = (needs[it.mId] || 0) + (parseFloat(it.qty) || 0); });
+                Object.entries(needs).forEach(([mId, qty]) => {
+                    const m = state.models.find(x => x.id === mId);
+                    if (m) m.stock = (m.stock || 0) + qty;
+                });
+                o.stockDeducted = false;
+            }
+            o.status = 'pending';
+            o.type = '';
+            o.invoiceNo = '';
+            o.deliveryDate = '';
+            o.paymentStatus = 'pending';
+            o.paidDate = '';
+            o.dueDate = '';
+            saveState(); renderAll();
+        }
+
+        // ====
+        //  TAB 5: FİNANS
+        // ====
+        function addManualExpense(e) {
+            e.preventDefault();
+            const desc = $('inp-exp-desc').value.trim();
+            const amount = parseFloat($('inp-exp-amt').value);
+            if (!desc || isNaN(amount) || amount <= 0) return alert('Geçerli açıklama ve tutar girin.');
+            const faturali = $('inp-exp-faturali').checked;
+            const kdv = faturali ? amount - (amount / (1 + state.settings.kdvRate / 100)) : 0;
+            state.transactions.push({
+                id: 'TRX' + Date.now(), desc, amount, date: new Date().toISOString(), type: 'out', faturali, kdv
+            });
+            saveState(); renderAll(); e.target.reset();
+        }
+
+        // ====
+        //  TAB 6: MUHASEBE & VERGİ
+        // ====
+        function saveSettings() {
+            const s = state.settings;
+            s.musavir = parseFloat($('set-musavir').value) || 0;
+            s.kdvDamga = parseFloat($('set-kdv').value) || 0;
+            s.muhtasarDamga = parseFloat($('set-muh').value) || 0;
+            s.geciciDamga = parseFloat($('set-gec').value) || 0;
+            if ($('set-kdv-rate')) s.kdvRate = parseFloat($('set-kdv-rate').value) || 20;
+            if ($('set-target')) s.targetProfit = parseFloat($('set-target').value) || 30;
+            if ($('set-low-fil')) s.lowFilament = parseFloat($('set-low-fil').value) || 500;
+            if ($('set-low-acc')) s.lowAccessory = parseFloat($('set-low-acc').value) || 5;
+            // Vergi dilimleri
+            const newBrackets = [];
+            for (let i = 1; i <= 5; i++) {
+                const limEl = $('brk-limit-' + i), rateEl = $('brk-rate-' + i);
+                if (!rateEl) continue;
+                const rate = parseFloat(rateEl.value);
+                if (isNaN(rate) || rate <= 0) continue;
+                const lim = i === 5 ? null : (parseFloat(limEl.value) || null);
+                newBrackets.push({ limit: lim, rate });
+            }
+            if (newBrackets.length) s.brackets = sortBrackets(newBrackets);
+            saveState(); renderAll();
+        }
+
+        function addAsset(e) {
+            e.preventDefault();
+            state.assets.push({
+                id: 'AST' + Date.now(),
+                name: $('inp-ast-name').value.trim(),
+                price: parseFloat($('inp-ast-price').value),
+                years: parseInt($('inp-ast-years').value),
+                date: new Date().toISOString()
+            });
+            saveState(); renderAll(); e.target.reset();
+        }
+
+        // --- Vergi hesaplamaları ---
+        function taxRateFor(matrah) {
+            const br = state.settings.brackets || [];
+            for (const b of br) {
+                if (b.limit === null || matrah <= b.limit) return b.rate;
+            }
+            return br.length ? br[br.length - 1].rate : 15;
+        }
+
+        function progressiveTax(matrah) {
+            const br = state.settings.brackets || [];
+            let tax = 0, prev = 0;
+            for (const b of br) {
+                const lim = b.limit === null ? Infinity : b.limit;
+                if (matrah > prev) {
+                    const slice = Math.min(matrah, lim) - prev;
+                    if (slice > 0) tax += slice * b.rate / 100;
+                }
+                prev = lim;
+                if (matrah <= lim) break;
+            }
+            return tax;
+        }
+
+        // --- Finansal özet (tüm hesapların merkezi) ---
+        function finSummary() {
+            const s = state.settings;
+            let cashIn = 0, cashOut = 0;
+            state.orders.forEach(o => { if (o.status === 'delivered' && o.paymentStatus === 'paid') cashIn += (o.total || 0); });
+            state.transactions.forEach(t => { if (t.type === 'in') cashIn += t.amount; else cashOut += t.amount; });
+            // Kasa çıkışı = yapılan gerçek alımlar (depo kayıtları). Mevcut stok değeri değil,
+            // alım kayıtları esas alınır; böylece satış yapmak geçmiş kasa çıkışını geri almaz.
+            state.filamentLogs.forEach(l => { cashOut += (l.pr || 0); });
+            state.accessoryLogs.forEach(l => { cashOut += (l.total ?? l.price ?? 0); });
+            const netCash = cashIn - cashOut;
+
+            let alacak = 0;
+            state.orders.forEach(o => { if (o.status === 'delivered' && o.paymentStatus === 'pending') alacak += (o.total || 0); });
+
+            let faturaliGelir = 0, kdvCikan = 0;
+            state.orders.forEach(o => { if (o.status === 'delivered' && o.type === 'faturalı') { faturaliGelir += (o.matrah || 0); kdvCikan += (o.kdv || 0); } });
+
+            let faturaliGider = 0, kdvGiren = 0;
+            state.filamentLogs.forEach(l => { if (l.faturali) { faturaliGider += (l.matrah ?? 0); kdvGiren += (l.kdv ?? 0); } });
+            state.accessoryLogs.forEach(l => { if (l.faturali) { faturaliGider += (l.matrah ?? 0); kdvGiren += (l.kdv ?? 0); } });
+            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) { const br = kdvBreakdown(t.amount || 0); faturaliGider += br.matrah; kdvGiren += br.kdv; } });
+
+            const yearlyFixed = (s.musavir * 12) + (s.kdvDamga * 12) + (s.muhtasarDamga * 12) + (s.geciciDamga * 4);
+            let yearlyAst = 0;
+            state.assets.forEach(a => yearlyAst += (a.price || 0) / (a.years || 1));
+
+            const matrah = Math.max(0, faturaliGelir - faturaliGider - yearlyFixed - yearlyAst);
+            const yillikVergi = progressiveTax(matrah);
+            const odenecekKdv = Math.max(0, kdvCikan - kdvGiren);
+            const devredenKdv = Math.max(0, kdvGiren - kdvCikan);
+
+            return { cashIn, cashOut, netCash, alacak, faturaliGelir, faturaliGider, kdvCikan, kdvGiren, odenecekKdv, devredenKdv, matrah, yillikVergi, yearlyFixed, yearlyAst, bracketRate: taxRateFor(matrah) };
+        }
+
+        // ====
+        //  ANA RENDER MOTORU
+        // ====
+        function renderAll() {
+            renderDashboard();
+            renderMaterials();
+            renderProducts();
+            renderDealers();
+            renderKanban();
+            renderFinance();
+            renderAccounting();
+            renderReports();
+            renderSettings();
+        }
+
+        // --- Dashboard ---
+        function renderDashboard() {
+            const fin = finSummary();
+            const pendingCount = state.orders.filter(o => o.status === 'pending').length;
+            const lowFil = state.filament.totalGr < state.settings.lowFilament;
+            const lowAccs = state.accessories.filter(a => a.qty < state.settings.lowAccessory);
+
+            $('dash-date').innerText = new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            const kpis = [
+                { label: 'Net Nakit', val: fmt(fin.netCash), icon: 'ph-wallet', cls: 'bg-sky-50 border-sky-200 text-sky-800', ic: 'text-sky-500' },
+                { label: 'Toplam Ciro', val: fmt(fin.cashIn), icon: 'ph-chart-line-up', cls: 'bg-emerald-50 border-emerald-200 text-emerald-800', ic: 'text-emerald-500' },
+                { label: 'Bekleyen Sipariş', val: pendingCount + ' adet', icon: 'ph-clock', cls: 'bg-amber-50 border-amber-200 text-amber-800', ic: 'text-amber-500' },
+                { label: 'Alacaklar (Cari)', val: fmt(fin.alacak), icon: 'ph-handshake', cls: 'bg-purple-50 border-purple-200 text-purple-800', ic: 'text-purple-500' },
+                { label: 'Ödenecek KDV', val: fmt(fin.odenecekKdv), icon: 'ph-receipt', cls: 'bg-rose-50 border-rose-200 text-rose-800', ic: 'text-rose-500' },
+                { label: 'Vergi Matrahı', val: fmt(fin.matrah), icon: 'ph-scales', cls: 'bg-indigo-50 border-indigo-200 text-indigo-800', ic: 'text-indigo-500' }
+            ];
+            $('dash-kpis').innerHTML = kpis.map(k => `
+                <div class="rounded-xl border p-4 ${k.cls}">
+                    <div class="flex items-center gap-2 mb-2"><i class="ph-fill ${k.icon} ${k.ic} text-lg"></i><p class="text-[10px] uppercase font-bold opacity-70">${k.label}</p></div>
+                    <p class="text-lg font-bold leading-tight">${k.val}</p>
+                </div>`).join('');
+
+            // Son 6 ay grafiği
+            const months = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                months.push({ y: d.getFullYear(), m: d.getMonth(), label: MONTHS[d.getMonth()].slice(0, 3) });
+            }
+            const salesByMonth = months.map(mm => {
+                let tot = 0;
+                state.orders.forEach(o => {
+                    if (o.status === 'delivered' && o.paymentStatus === 'paid') {
+                        const d = new Date(o.deliveryDate || o.date);
+                        if (d.getFullYear() === mm.y && d.getMonth() === mm.m) tot += o.total;
+                    }
+                });
+                return tot;
+            });
+            const maxS = Math.max(...salesByMonth, 1);
+            $('dash-chart').innerHTML = salesByMonth.map((v, i) => `
+                <div class="bar" style="height:${Math.max(4, (v / maxS) * 100)}%; background:${v > 0 ? 'linear-gradient(180deg,#38bdf8,#0284c7)' : '#e2e8f0'};">
+                    <span class="val">${v > 0 ? fmtN(v) : ''}</span>
+                    <span class="lbl">${months[i].label}</span>
+                </div>`).join('');
+
+            // Uyarılar
+            const alerts = [];
+            if (lowFil) alerts.push({ icon: 'ph-spinner-gap', txt: 'Filament stoğu düşük: ' + fmtN(state.filament.totalGr) + ' gr', cls: 'bg-amber-50 border-amber-200 text-amber-800' });
+            lowAccs.forEach(a => alerts.push({ icon: 'ph-link', txt: a.name + ' stoğu düşük: ' + a.qty + ' adet', cls: 'bg-amber-50 border-amber-200 text-amber-800' }));
+            if (fin.alacak > 0) alerts.push({ icon: 'ph-handshake', txt: 'Bekleyen tahsilat: ' + fmt(fin.alacak), cls: 'bg-purple-50 border-purple-200 text-purple-800' });
+            if (fin.odenecekKdv > 0) alerts.push({ icon: 'ph-receipt', txt: 'Ödenecek KDV: ' + fmt(fin.odenecekKdv), cls: 'bg-rose-50 border-rose-200 text-rose-800' });
+            if (!alerts.length) alerts.push({ icon: 'ph-check-circle', txt: 'Her şey yolunda, uyarı yok.', cls: 'bg-emerald-50 border-emerald-200 text-emerald-800' });
+            $('dash-alerts').innerHTML = alerts.map(a => `
+                <div class="flex items-start gap-2 p-2.5 rounded-lg border text-xs font-semibold ${a.cls}">
+                    <i class="ph-fill ${a.icon} text-sm mt-0.5"></i><span>${a.txt}</span>
+                </div>`).join('');
+
+            // Son siparişler
+            const recent = [...state.orders].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+            $('dash-orders').innerHTML = recent.map(o => {
+                const d = state.dealers.find(x => x.id === o.locId);
+                const st = o.status === 'pending'
+                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Üretimde</span>'
+                    : (o.paymentStatus === 'paid'
+                        ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Tahsil Edildi</span>'
+                        : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Alacak</span>');
+                return `
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2 text-sm">
+                    <div><span class="font-semibold text-slate-800">${esc(d ? d.name : '?')}</span>
+                    <span class="text-xs text-slate-400 ml-2">${new Date(o.date).toLocaleDateString('tr-TR')}</span></div>
+                    <div class="flex items-center gap-2"><b class="text-slate-700">${fmt(o.total)}</b>${st}</div>
+                </div>`;
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Henüz sipariş yok.</p>';
+
+            // Cari özet
+            const cari = state.orders.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending');
+            $('dash-cari').innerHTML = cari.slice(0, 6).map(o => {
+                const d = state.dealers.find(x => x.id === o.locId);
+                const overdue = o.dueDate && new Date(o.dueDate) < new Date();
+                return `
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2 text-sm">
+                    <div><span class="font-semibold text-slate-800">${esc(d ? d.name : '?')}</span>
+                    <span class="text-xs ${overdue ? 'text-rose-500 font-bold' : 'text-slate-400'} ml-2">${o.dueDate ? 'Vade: ' + new Date(o.dueDate).toLocaleDateString('tr-TR') : ''}${overdue ? ' (GECİKMİŞ)' : ''}</span></div>
+                    <b class="text-purple-700">${fmt(o.total)}</b>
+                </div>`;
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen tahsilat yok. 🎉</p>';
+        }
+
+        // --- Hammadde ---
+        function renderMaterials() {
+            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            $('ui-fil-stock').innerText = fmtN(state.filament.totalGr) + ' gr';
+            $('ui-fil-avg').innerText = filAvg.toFixed(3) + ' ₺';
+            const lowFil = state.filament.totalGr < state.settings.lowFilament;
+            $('ui-fil-warn').innerHTML = lowFil ? '<span class="text-rose-500">⚠ Düşük stok!</span>' : '<span class="text-emerald-500">✓ Yeterli</span>';
+
+            const filFaturalilar = state.filamentLogs.filter(l => l.faturali);
+            const totalInputKdv = filFaturalilar.reduce((s, l) => s + (l.kdv || 0), 0);
+            if ($('ui-fil-kdv-total')) $('ui-fil-kdv-total').innerText = fmt(totalInputKdv);
+            if ($('ui-fil-kdv-logs')) {
+                const rows = [...state.filamentLogs].reverse().slice(0, 8).map(l => {
+                    const br = l.faturali ? { matrah: l.matrah ?? kdvBreakdown(l.pr || 0).matrah, kdv: l.kdv ?? kdvBreakdown(l.pr || 0).kdv } : { matrah: l.pr || 0, kdv: 0 };
+                    return `<div class="p-2 border-b border-slate-200">
+                    <div class="flex justify-between"><b>${new Date(l.date).toLocaleDateString('tr-TR')}</b><span>${l.faturali ? 'Faturalı' : 'Faturasız'}</span></div>
+                    <div class="grid grid-cols-3 gap-2 mt-1">
+                    <span>Matrah: <b>${fmt(br.matrah)}</b></span>
+                    <span>KDV: <b>${fmt(br.kdv)}</b></span>
+                    <span>Toplam: <b>${fmt(l.pr || 0)}</b></span>
+                    </div>
+                    </div>`;
+                }).join('');
+                $('ui-fil-kdv-logs').innerHTML = rows || '<div class="p-3 text-slate-400">Hammadde alım kaydı yok.</div>';
+            }
+
+            $('ui-acc-list').innerHTML = state.accessories.map(a => {
+                const avg = a.qty > 0 ? a.totalCost / a.qty : 0;
+                const low = a.qty < state.settings.lowAccessory;
+                return `<tr>
+                    <td class="p-2 font-medium">${esc(a.name)}</td>
+                    <td class="p-2 text-center font-bold ${low ? 'text-rose-500' : 'text-purple-700'}">${a.qty}${low ? ' ⚠' : ''}</td>
+                    <td class="p-2 text-right">${avg.toFixed(2)} ₺</td>
+                    <td class="p-2 text-center">
+                    <button onclick="openAccessoryStockModal('${a.id}')" class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Stok Ekle</button>
+                    <button onclick="openAccessoryHistory('${a.id}')" class="bg-violet-100 text-violet-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Geçmiş</button>
+                    <button onclick="openEditModal('accessory', '${a.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Düzenle</button>
+                    <button onclick="askConfirm('Bu aksesuar silinecek. Emin misiniz?', ()=>deleteAccessory('${a.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Aksesuar yok.</td></tr>';
+        }
+
+        // --- Ürünler ---
+        function renderProducts() {
+            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            const q = ($('inp-prod-search').value || '').toLowerCase().trim();
+            const list = state.models
+                .filter(m => !q || m.name.toLowerCase().includes(q))
+                .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+            $('ui-products-grid').innerHTML = list.map(m => {
+                let mC = m.filGr * filAvg;
+                (m.recipe || []).forEach(r => { const a = state.accessories.find(x => x.id === r.id); if (a && a.qty > 0) mC += (r.qty * (a.totalCost / a.qty)); });
+                const prf = mC > 0 ? ((m.price - mC) / mC) * 100 : 0;
+                return `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 relative overflow-hidden flex flex-col">
+                    <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-bold text-lg text-slate-800">${esc(m.name)}</h3>
+                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold border border-emerald-200">${(m.price || 0).toFixed(2)} ₺</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">${m.filGr}gr Filament${(m.recipe && m.recipe.length) ? ' + ' + m.recipe.length + ' Aksesuar' : ''}</p>
+                    <p class="text-xs mb-3">Mevcut Ürün Stoğu: <b class="${(m.stock || 0) > 0 ? 'text-emerald-700' : 'text-rose-600'}">${m.stock || 0} adet</b></p>
+                    <div class="mt-auto bg-slate-50 p-2 rounded flex justify-between text-xs">
+                    <span class="text-slate-500">Saf Maliyet: <b class="text-slate-800">${mC.toFixed(2)}₺</b></span>
+                    <span class="text-sky-600 font-bold">%${isFinite(prf) ? prf.toFixed(0) : 0} Brüt Kâr</span>
+                    </div>
+                    <div class="flex gap-2 mt-3 flex-wrap">
+                    <button onclick="openProductStockModal('${m.id}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-1.5 px-2 rounded text-xs font-bold">Stok Ekle</button>
+                    <button onclick="openProductHistory('${m.id}')" class="bg-violet-100 hover:bg-violet-200 text-violet-700 py-1.5 px-2 rounded text-xs font-bold">Stok Geçmişi</button>
+                    <button onclick="openProductModal('${m.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 py-1.5 px-2 rounded text-xs font-bold">Düzenle</button>
+                    <button onclick="askConfirm('Bu ürün silinecek. Emin misiniz?', ()=>deleteProduct('${m.id}'))" class="bg-rose-100 hover:bg-rose-200 text-rose-700 py-1.5 px-2 rounded text-xs font-bold">Sil</button>
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-8 col-span-full">Ürün bulunamadı.</p>';
+        }
+
+        // --- Bayiler ---
+        function renderDealers() {
+            const filter = $('inp-dealer-filter') ? $('inp-dealer-filter').value : '';
+            const dealers = state.dealers.filter(d => !filter || (d.category || d.type) === filter);
+            $('ui-dealers-grid').innerHTML = dealers.map(d => {
+                const dOrds = state.orders.filter(o => o.locId === d.id);
+                const vol = dOrds.reduce((s, o) => s + (o.total || 0), 0);
+                const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + (o.total || 0), 0);
+                const ordersHtml = dOrds.length ? dOrds.map(o => {
+                    const itemsText = (o.items || []).map(i => {
+                        const m = state.models.find(x => x.id === i.mId);
+                        return `${i.qty}x ${m ? m.name : 'Ürün'}`;
+                    }).join(', ');
+                    const stLabel = o.status === 'pending' ? 'Bekliyor' : (o.paymentStatus === 'paid' ? 'Tahsil Edildi' : 'Teslim/Alacak');
+                    return `<div class="border border-slate-200 rounded p-2 text-xs bg-slate-50">
+                    <div class="flex justify-between"><b>${new Date(o.date).toLocaleDateString('tr-TR')}</b><span>${stLabel}</span></div>
+                    <div class="mt-1">${esc(itemsText)}</div>
+                    <div class="mt-1">Toplam: <b>${fmt(o.total)}</b> · ${o.type ? ('Fatura: ' + o.type + (o.invoiceNo ? ' #' + esc(o.invoiceNo) : '')) : 'Fatura: Bekliyor'}</div>
+                    <div>${o.dueDate ? ('Vade: ' + new Date(o.dueDate).toLocaleDateString('tr-TR')) : ''} ${o.deliveryDate ? ('· Teslim: ' + new Date(o.deliveryDate).toLocaleDateString('tr-TR')) : ''}</div>
+                    <div class="mt-2 flex gap-1">
+                    <button onclick="openOrderEditModal('${o.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold">Siparişi Düzenle</button>
+                    <button onclick="askConfirm('Bu sipariş silinecek. Ürün stoğu geri alınacak. Emin misiniz?', ()=>deleteLog('sales', '${o.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Siparişi Sil</button>
+                    </div>
+                    </div>`;
+                }).join('') : '<p class="text-xs text-slate-400">Sipariş geçmişi yok.</p>';
+
+                return `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-start">
+                    <div>
+                    <h3 class="font-bold text-slate-800">${esc(d.name)}</h3>
+                    <p class="text-xs text-slate-500 mb-3">${esc(d.category || d.type || 'Bireysel Müşteri')}</p>
+                    </div>
+                    <div class="flex gap-1">
+                    <button onclick="openEditModal('dealer', '${d.id}')" class="text-blue-500 hover:bg-blue-50 p-1 rounded"><i class="ph-bold ph-pencil-simple"></i></button>
+                    <button onclick="askConfirm('Bu bayi silinecek. Emin misiniz?', ()=>deleteDealer('${d.id}'))" class="text-rose-500 hover:bg-rose-50 p-1 rounded"><i class="ph-bold ph-trash"></i></button>
+                    </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+                    <div class="font-semibold text-sky-700 bg-sky-50 p-2 rounded">Ciro: ${fmt(vol)}</div>
+                    <div class="font-semibold ${alacak > 0 ? 'text-purple-700 bg-purple-50' : 'text-slate-500 bg-slate-50'} p-2 rounded">Alacak: ${fmt(alacak)}</div>
+                    </div>
+                    <div class="space-y-2 max-h-52 overflow-y-auto">${ordersHtml}</div>
+                </div>`;
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-8 col-span-full">Filtreye uygun bayi yok.</p>';
+        }
+
+        // --- Kanban ---
+        function renderKanban() {
+            let kp = '', kd = '';
+            state.orders.forEach(o => {
+                const d = state.dealers.find(x => x.id === o.locId);
+                const dt = new Date(o.date).toLocaleDateString('tr-TR');
+                let itms = (o.items || []).map(i => { const m = state.models.find(x => x.id === i.mId); return `${i.qty}x ${m ? m.name : ''}`; }).join(', ');
+                const card = `
+                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                    <div class="flex justify-between text-xs text-slate-500 mb-1"><span>${esc(d ? d.name : '?')}</span><span>${dt}</span></div>
+                    <div class="font-bold text-sm text-slate-800 mb-2">${esc(itms)}</div>
+                    <div class="text-xs text-slate-500 mb-2">Fatura: ${o.type ? esc(o.type + (o.invoiceNo ? ' #' + o.invoiceNo : '')) : 'Bekliyor'}</div>
+                    <div class="flex justify-between items-end">
+                    <span class="font-bold text-sky-700">${fmt(o.total)}</span>
+                    ${o.status === 'pending'
+                        ? `<div class="flex gap-1"><button onclick="openOrderEditModal('${o.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">Düzenle</button><button onclick="promptDelivery('${o.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs shadow-sm">Teslim Et</button></div>`
+                        : `<div class="flex flex-col items-end gap-1">
+                    <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${o.type === 'faturalı' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${o.type || ''}</span>
+                    <div class="flex gap-1">
+                    ${o.paymentStatus === 'pending'
+                        ? `<button onclick="collectPayment('${o.id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-[10px] shadow-sm">Tahsil Et</button>`
+                        : `<button onclick="undoCollectPayment('${o.id}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-[10px]">Tahsilatı Geri Al</button>`}
+                    <button onclick="undoDelivery('${o.id}')" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-[10px]">Teslimi Geri Al</button>
+                    <button onclick="openOrderEditModal('${o.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-[10px]">Düzenle</button>
+                    </div>
+                    </div>`}
+                    </div>
+                </div>`;
+                if (o.status === 'pending') kp += card; else kd += card;
+            });
+            $('kanban-pending').innerHTML = kp || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen sipariş yok.</p>';
+            $('kanban-delivered').innerHTML = kd || '<p class="text-center text-slate-400 text-sm py-4">Teslimat yok.</p>';
+            $('kanban-pending-count').innerText = state.orders.filter(o => o.status === 'pending').length;
+            $('kanban-delivered-count').innerText = state.orders.filter(o => o.status === 'delivered').length;
+        }
+
+        // --- Finans ---
+        function renderFinance() {
+            const fin = finSummary();
+            $('ui-fin-in').innerText = fmt(fin.cashIn);
+            $('ui-fin-out').innerText = fmt(fin.cashOut);
+            $('ui-fin-net').innerText = fmt(fin.netCash);
+
+            const cari = state.orders.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending');
+            $('ui-cari-total').innerText = fmt(fin.alacak);
+            $('ui-cari-list').innerHTML = cari.map(o => {
+                const d = state.dealers.find(x => x.id === o.locId);
+                const overdue = o.dueDate && new Date(o.dueDate) < new Date();
+                return `
+                <div class="flex justify-between items-center p-2.5 rounded-lg border ${overdue ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}">
+                    <div>
+                    <div class="font-semibold text-sm text-slate-800">${esc(d ? d.name : '?')}</div>
+                    <div class="text-[11px] ${overdue ? 'text-rose-600 font-bold' : 'text-slate-400'}">
+                    ${o.dueDate ? 'Vade: ' + new Date(o.dueDate).toLocaleDateString('tr-TR') : 'Vade belirtilmedi'}${overdue ? ' — GECİKMİŞ' : ''}
+                    </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                    <b class="text-purple-700 text-sm">${fmt(o.total)}</b>
+                    <button onclick="collectPayment('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded text-[11px] font-bold">Tahsil Et</button>
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen tahsilat yok. 🎉</p>';
+        }
+
+        // --- Muhasebe ---
+        function renderAccounting() {
+            const fin = finSummary();
+            $('acc-year').innerText = currentYear;
+            $('cal-year').innerText = currentYear;
+            $('ui-acc-matrah').innerText = fmt(fin.matrah);
+            $('ui-acc-bracket').innerText = '%' + fin.bracketRate + ' Vergi Dilimindesiniz';
+            $('ui-acc-gelir').innerText = fmt(fin.faturaliGelir);
+            $('ui-acc-gider').innerText = fmt(fin.faturaliGider);
+            $('ui-acc-sabit').innerText = fmt(fin.yearlyFixed);
+            $('ui-acc-amort').innerText = fmt(fin.yearlyAst);
+            $('ui-acc-vergi').innerText = fmt(fin.yillikVergi);
+            $('ui-kdv-cikan').innerText = fmt(fin.kdvCikan);
+            $('ui-kdv-giren').innerText = fmt(fin.kdvGiren);
+            $('ui-kdv-odenecek').innerText = fmt(fin.odenecekKdv);
+            $('ui-kdv-devreden').innerText = fmt(fin.devredenKdv);
+
+            $('set-musavir').value = state.settings.musavir;
+            $('set-kdv').value = state.settings.kdvDamga;
+            $('set-muh').value = state.settings.muhtasarDamga;
+            $('set-gec').value = state.settings.geciciDamga;
+
+            let yearlyAstExp = 0;
+            $('ui-assets-list').innerHTML = state.assets.map(a => {
+                const yE = a.price / a.years; yearlyAstExp += yE;
+                return `<tr>
+                    <td class="p-2 font-medium">${esc(a.name)}</td>
+                    <td class="p-2">${fmt(a.price)}</td>
+                    <td class="p-2">${a.years} Yıl</td>
+                    <td class="p-2 font-bold text-amber-600">${fmt(yE)}</td>
+                    <td class="p-2 text-slate-500">${fmt(yE / 12)}</td>
+                    <td class="p-2 text-center">
+                    <button onclick="openEditModal('asset', '${a.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Düzenle</button>
+                    <button onclick="askConfirm('Bu demirbaş silinecek. Emin misiniz?', ()=>deleteAsset('${a.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Demirbaş yok.</td></tr>';
+
+            buildCalendar();
+        }
+
+        // --- 12 Aylık Vergi Takvimi ---
+        function buildCalendar() {
+            const s = state.settings;
+            const kdvRate = s.kdvRate / 100;
+
+            // Aylık net KDV (çıkan - giren)
+            const kdvByMonth = Array(12).fill(0);
+            state.orders.forEach(o => {
+                if (o.status === 'delivered' && o.type === 'faturalı') {
+                    const m = new Date(o.deliveryDate || o.date).getMonth();
+                    kdvByMonth[m] += o.kdv;
+                }
+            });
+            const addKdvGiren = (date, amount) => {
+                const m = new Date(date).getMonth();
+                kdvByMonth[m] -= (amount - amount / (1 + kdvRate));
+            };
+            state.filamentLogs.forEach(l => { if (l.faturali) addKdvGiren(l.date, l.pr); });
+            state.accessoryLogs.forEach(l => { if (l.faturali) addKdvGiren(l.date, l.price); });
+            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addKdvGiren(t.date, t.amount); });
+
+            // Çeyreklik matrah (geçici vergi için)
+            const qGelir = [0, 0, 0, 0], qGider = [0, 0, 0, 0];
+            state.orders.forEach(o => {
+                if (o.status === 'delivered' && o.type === 'faturalı') {
+                    const m = new Date(o.deliveryDate || o.date).getMonth();
+                    qGelir[Math.floor(m / 3)] += o.matrah;
+                }
+            });
+            const addQGider = (date, amount) => {
+                const m = new Date(date).getMonth();
+                qGider[Math.floor(m / 3)] += amount / (1 + kdvRate);
+            };
+            state.filamentLogs.forEach(l => { if (l.faturali) addQGider(l.date, l.pr); });
+            state.accessoryLogs.forEach(l => { if (l.faturali) addQGider(l.date, l.price); });
+            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addQGider(t.date, t.amount); });
+
+            const qNet = qGelir.map((g, i) => Math.max(0, g - qGider[i]));
+            const geciciVergi = qNet.map(q => q > 0 ? q * taxRateFor(q) / 100 : 0);
+
+            const fin = finSummary();
+            const yillikVergi = fin.yillikVergi;
+            const geciciToplam = geciciVergi[0] + geciciVergi[1] + geciciVergi[2];
+            const kalanVergi = Math.max(0, yillikVergi - geciciToplam);
+
+            // Devreden KDV kümülatif
+            let devreden = 0;
+            const kdvCum = kdvByMonth.map(v => { devreden = Math.max(0, devreden + v); return devreden; });
+
+            $('ui-months-grid').innerHTML = MONTHS.map((mName, i) => {
+                let mF = s.musavir + s.kdvDamga + s.muhtasarDamga;
+                let tags = '';
+                let kdvLine = '';
+                const netKdv = kdvByMonth[i];
+                if (netKdv > 0.5) kdvLine = `<div class="flex justify-between text-rose-600 text-xs font-semibold"><span>Ödenecek KDV:</span><span>${fmt(netKdv)}</span></div>`;
+                else if (netKdv < -0.5) kdvLine = `<div class="flex justify-between text-emerald-600 text-xs font-semibold"><span>Devreden KDV:</span><span>${fmt(-netKdv)}</span></div>`;
+
+                // Geçici vergi ödemeleri: Mayıs (Q1), Ağustos (Q2), Kasım (Q3)
+                if (i === 4) { mF += s.geciciDamga; tags += `<div class="bg-amber-100 text-amber-700 text-[10px] px-1.5 rounded py-0.5 mt-1 font-bold">Geçici Vergi Ödemesi (Q1): ${fmt(geciciVergi[0])}</div>`; }
+                if (i === 7) { mF += s.geciciDamga; tags += `<div class="bg-amber-100 text-amber-700 text-[10px] px-1.5 rounded py-0.5 mt-1 font-bold">Geçici Vergi Ödemesi (Q2): ${fmt(geciciVergi[1])}</div>`; }
+                if (i === 10) { mF += s.geciciDamga; tags += `<div class="bg-amber-100 text-amber-700 text-[10px] px-1.5 rounded py-0.5 mt-1 font-bold">Geçici Vergi Ödemesi (Q3): ${fmt(geciciVergi[2])}</div>`; }
+                // Yıllık gelir vergisi: Mart
+                if (i === 2) tags += `<div class="bg-purple-100 text-purple-700 text-[10px] px-1.5 rounded py-0.5 mt-1 font-bold">Yıllık Gelir V. (kalan): ${fmt(kalanVergi)}</div>`;
+
+                return `<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm text-sm">
+                    <div class="font-bold border-b pb-1 mb-2 flex justify-between items-center"><span>${mName} ${currentYear}</span>${i === 2 ? '<span class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">Beyan</span>' : ''}</div>
+                    <div class="flex justify-between text-slate-500 text-xs mb-1"><span>Sabit Giderler:</span> <span class="font-semibold text-slate-700">${fmt(mF)}</span></div>
+                    ${kdvLine}
+                    ${tags}
+                </div>`;
+            }).join('');
+        }
+
+        // ====
+        //  TAB 7: RAPORLAR
+        // ====
+        function renderReports() {
+            $('rep-year').innerText = currentYear;
+            const rows = monthlyReport();
+            $('ui-monthly-report').innerHTML = rows.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-2 font-semibold">${r.month}</td>
+                    <td class="p-2 text-right text-emerald-600 font-semibold">${fmt(r.gelir)}</td>
+                    <td class="p-2 text-right text-rose-600 font-semibold">${fmt(r.gider)}</td>
+                    <td class="p-2 text-right font-bold ${r.net >= 0 ? 'text-slate-800' : 'text-rose-600'}">${fmt(r.net)}</td>
+                </tr>`).join('');
+
+            $('ui-dealer-report').innerHTML = state.dealers.map(d => {
+                const dOrds = state.orders.filter(o => o.locId === d.id);
+                const vol = dOrds.reduce((s, o) => s + o.total, 0);
+                const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + o.total, 0);
+                return `<tr class="hover:bg-slate-50">
+                    <td class="p-2 font-semibold">${esc(d.name)}</td>
+                    <td class="p-2 text-center">${dOrds.length}</td>
+                    <td class="p-2 text-right text-sky-700 font-semibold">${fmt(vol)}</td>
+                    <td class="p-2 text-right ${alacak > 0 ? 'text-purple-700 font-semibold' : 'text-slate-400'}">${fmt(alacak)}</td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Bayi yok.</td></tr>';
+
+            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            $('ui-product-report').innerHTML = state.models.map(m => {
+                let sold = 0, ciro = 0;
+                // Raporlar sipariş anındaki birim fiyatı (unitPrice) esas alır; ürünün güncel fiyatı değişse bile geçmiş doğru kalır.
+                state.orders.forEach(o => {
+                    (o.items || []).forEach(i => {
+                        if (i.mId === m.id) {
+                            sold += i.qty;
+                            ciro += i.qty * (i.unitPrice ?? m.price);
+                        }
+                    });
+                });
+                let mC = m.filGr * filAvg;
+                (m.recipe || []).forEach(r => { const a = state.accessories.find(x => x.id === r.id); if (a && a.qty > 0) mC += (r.qty * (a.totalCost / a.qty)); });
+                let karToplam = 0;
+                state.orders.forEach(o => {
+                    (o.items || []).forEach(i => {
+                        if (i.mId === m.id) karToplam += i.qty * ((i.unitPrice ?? m.price) - mC);
+                    });
+                });
+                return `<tr class="hover:bg-slate-50">
+                    <td class="p-2 font-semibold">${esc(m.name)}</td>
+                    <td class="p-2 text-center">${sold}</td>
+                    <td class="p-2 text-right text-sky-700 font-semibold">${fmt(ciro)}</td>
+                    <td class="p-2 text-right ${karToplam >= 0 ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}">${fmt(karToplam)}</td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Ürün yok.</td></tr>';
+        }
+
+        function monthlyReport() {
+            const rows = [];
+            for (let m = 0; m < 12; m++) {
+                let gelir = 0, gider = 0;
+                state.orders.forEach(o => {
+                    if (o.status === 'delivered' && o.paymentStatus === 'paid') {
+                        const d = new Date(o.deliveryDate || o.date);
+                        if (d.getFullYear() === currentYear && d.getMonth() === m) gelir += o.total;
+                    }
+                });
+                state.transactions.forEach(t => {
+                    const d = new Date(t.date);
+                    if (d.getFullYear() === currentYear && d.getMonth() === m) { if (t.type === 'in') gelir += t.amount; else gider += t.amount; }
+                });
+                state.filamentLogs.forEach(l => { const d = new Date(l.date); if (d.getFullYear() === currentYear && d.getMonth() === m) gider += l.pr; });
+                state.accessoryLogs.forEach(l => { const d = new Date(l.date); if (d.getFullYear() === currentYear && d.getMonth() === m) gider += (l.total ?? l.price ?? 0); });
+                rows.push({ month: MONTHS[m], gelir, gider, net: gelir - gider });
+            }
+            return rows;
+        }
+
+        // --- CSV Dışa Aktarma ---
+        function exportCSV(filename, headers, rows) {
+            const escC = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+            const csv = [headers.map(escC).join(';'), ...rows.map(r => r.map(escC).join(';'))].join('\n');
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function exportMonthlyCSV() {
+            const rows = monthlyReport().map(r => [r.month, r.gelir.toFixed(2), r.gider.toFixed(2), r.net.toFixed(2)]);
+            exportCSV('aylik_kar_zarar_' + currentYear + '.csv', ['Ay', 'Gelir (TL)', 'Gider (TL)', 'Net (TL)'], rows);
+        }
+
+        function exportDealerCSV() {
+            const rows = state.dealers.map(d => {
+                const dOrds = state.orders.filter(o => o.locId === d.id);
+                const vol = dOrds.reduce((s, o) => s + o.total, 0);
+                const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + o.total, 0);
+                return [d.name, d.category || d.type, dOrds.length, vol.toFixed(2), alacak.toFixed(2)];
+            });
+            exportCSV('bayi_raporu.csv', ['Bayi', 'Kategori', 'Sipariş Sayısı', 'Ciro (TL)', 'Alacak (TL)'], rows);
+        }
+
+        function exportProductCSV() {
+            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            const rows = state.models.map(m => {
+                let sold = 0, ciro = 0, kar = 0;
+                let mC = m.filGr * filAvg;
+                (m.recipe || []).forEach(r => { const a = state.accessories.find(x => x.id === r.id); if (a && a.qty > 0) mC += (r.qty * (a.totalCost / a.qty)); });
+                state.orders.forEach(o => {
+                    (o.items || []).forEach(i => {
+                        if (i.mId === m.id) {
+                            const unit = i.unitPrice ?? m.price;
+                            sold += i.qty;
+                            ciro += i.qty * unit;
+                            kar += i.qty * (unit - mC);
+                        }
+                    });
+                });
+                return [m.name, sold, ciro.toFixed(2), kar.toFixed(2)];
+            });
+            exportCSV('urun_raporu.csv', ['Ürün', 'Satılan Adet', 'Ciro (TL)', 'Tahmini Kâr (TL)'], rows);
+        }
+
+        // ====
+        //  STOK GEÇMİŞLERİ (Aksesuar / Ürün)
+        // ====
+        function openAccessoryHistory(accId) {
+            currentHistoryType = 'accessoryById:' + accId;
+            const acc = state.accessories.find(a => a.id === accId);
+            const logs = [...state.accessoryLogs].filter(l => l.accId === accId).reverse();
+            $('hist-title').innerHTML = `<i class="ph-fill ph-link"></i> ${esc(acc ? acc.name : 'Aksesuar')} Stok Geçmişi`;
+            $('hist-thead').innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Adet</th><th class="p-3">Birim</th><th class="p-3">Matrah</th><th class="p-3">KDV</th><th class="p-3">Toplam</th><th class="p-3">Not</th><th class="p-3">İşlem</th></tr>';
+            $('hist-tbody').innerHTML = logs.map(l => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
+                    <td class="p-3 font-semibold">${l.qty}</td>
+                    <td class="p-3">${(l.unitPrice || 0).toFixed(2)} ₺</td>
+                    <td class="p-3">${fmt(l.faturali ? (l.matrah || 0) : (l.total || 0))}</td>
+                    <td class="p-3">${fmt(l.faturali ? (l.kdv || 0) : 0)}</td>
+                    <td class="p-3 font-bold text-purple-700">${fmt(l.total || 0)}</td>
+                    <td class="p-3">${esc(l.note || '-')}</td>
+                    <td class="p-3"><button onclick="openEditModal('accessoryLog', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu kayıt silinecek ve stok geri alınacak. Emin misiniz?', ()=>deleteLog('accessory', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
+                </tr>`).join('') || '<tr><td colspan="8" class="p-4 text-center text-slate-400">Kayıt yok.</td></tr>';
+            openModal('modal-history');
+        }
+
+        function openProductHistory(prodId) {
+            currentHistoryType = 'productById:' + prodId;
+            const p = state.models.find(m => m.id === prodId);
+            const logs = [...state.productStockLogs].filter(l => l.productId === prodId).reverse();
+            $('hist-title').innerHTML = `<i class="ph-fill ph-package"></i> ${esc(p ? p.name : 'Ürün')} Stok Geçmişi`;
+            $('hist-thead').innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Adet</th><th class="p-3">Not</th><th class="p-3">İşlem</th></tr>';
+            $('hist-tbody').innerHTML = logs.map(l => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
+                    <td class="p-3 font-semibold">${l.qty}</td>
+                    <td class="p-3">${esc(l.note || '-')}</td>
+                    <td class="p-3"><button onclick="openEditModal('productStock', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu kayıt silinecek, ürün ve hammadde stokları geri alınacak. Emin misiniz?', ()=>deleteLog('productStock', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
+                </tr>`).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Kayıt yok.</td></tr>';
+            openModal('modal-history');
+        }
+
+        // ====
+        //  GEÇMİŞ LİSTESİ
+        // ====
+        function openHistory(type) {
+            if (String(type).startsWith('accessoryById:')) return openAccessoryHistory(type.split(':')[1]);
+            if (String(type).startsWith('productById:')) return openProductHistory(type.split(':')[1]);
+            currentHistoryType = type;
+            const title = $('hist-title');
+            const thead = $('hist-thead');
+            const tbody = $('hist-tbody');
+
+            if (type === 'filament') {
+                title.innerHTML = '<i class="ph-fill ph-spinner-gap"></i> Filament Alım Geçmişi';
+                thead.innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Miktar</th><th class="p-3">Matrah</th><th class="p-3">KDV</th><th class="p-3">Toplam</th><th class="p-3">Fatura</th><th class="p-3">İşlem</th></tr>';
+                tbody.innerHTML = [...state.filamentLogs].reverse().map(l => `
+                    <tr class="hover:bg-slate-50">
+                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
+                    <td class="p-3 font-semibold">${l.gr} gr</td>
+                    <td class="p-3">${fmt(l.faturali ? (l.matrah || 0) : (l.pr || 0))}</td>
+                    <td class="p-3">${fmt(l.faturali ? (l.kdv || 0) : 0)}</td>
+                    <td class="p-3 text-sky-700 font-bold">${fmt(l.pr || 0)}</td>
+                    <td class="p-3">${l.faturali ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Faturalı</span>' : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Faturasız</span>'}</td>
+                    <td class="p-3"><button onclick="openEditModal('filament', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu kayıt silinecek ve stok geri alınacak. Emin misiniz?', ()=>deleteLog('filament', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
+                    </tr>`).join('') || '<tr><td colspan="7" class="p-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
+            } else if (type === 'accessory') {
+                title.innerHTML = '<i class="ph-fill ph-link"></i> Aksesuar Alım Geçmişi';
+                thead.innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Aksesuar</th><th class="p-3">Adet</th><th class="p-3">Matrah</th><th class="p-3">KDV</th><th class="p-3">Toplam</th><th class="p-3">Fatura</th><th class="p-3">İşlem</th></tr>';
+                tbody.innerHTML = [...state.accessoryLogs].reverse().map(l => `
+                    <tr class="hover:bg-slate-50">
+                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
+                    <td class="p-3">${esc(l.name)}</td>
+                    <td class="p-3 font-semibold">${l.qty}</td>
+                    <td class="p-3">${fmt(l.faturali ? (l.matrah || 0) : (l.total || 0))}</td>
+                    <td class="p-3">${fmt(l.faturali ? (l.kdv || 0) : 0)}</td>
+                    <td class="p-3 text-purple-700 font-bold">${fmt(l.total || 0)}</td>
+                    <td class="p-3">${l.faturali ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Faturalı</span>' : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Faturasız</span>'}</td>
+                    <td class="p-3"><button onclick="openEditModal('accessoryLog', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu kayıt silinecek ve stok geri alınacak. Emin misiniz?', ()=>deleteLog('accessory', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
+                    </tr>`).join('') || '<tr><td colspan="8" class="p-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
+            } else if (type === 'expense') {
+                title.innerHTML = '<i class="ph-bold ph-receipt"></i> Gider ve Harcama Geçmişi';
+                thead.innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Açıklama</th><th class="p-3">Tutar</th><th class="p-3">Fatura</th><th class="p-3">İşlem</th></tr>';
+                tbody.innerHTML = [...state.transactions].reverse().filter(t => t.type === 'out').map(l => `
+                    <tr class="hover:bg-slate-50">
+                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
+                    <td class="p-3">${esc(l.desc)}</td>
+                    <td class="p-3 text-rose-600 font-bold">${l.amount.toFixed(2)} ₺</td>
+                    <td class="p-3">${l.faturali ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Faturalı</span>' : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Faturasız</span>'}</td>
+                    <td class="p-3"><button onclick="openEditModal('expense', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu gider silinecek. Emin misiniz?', ()=>deleteLog('expense', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
+                    </tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
+            } else if (type === 'sales') {
+                title.innerHTML = '<i class="ph-bold ph-shopping-bag"></i> Sipariş ve Satış Geçmişi';
+                thead.innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Bayi/Platform</th><th class="p-3">Tutar</th><th class="p-3">Fatura Türü</th><th class="p-3">Tahsilat</th><th class="p-3">İşlem</th></tr>';
+                tbody.innerHTML = [...state.orders].reverse().map(l => {
+                    const d = state.dealers.find(x => x.id === l.locId);
+                    return `
+                    <tr class="hover:bg-slate-50">
+                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
+                    <td class="p-3">${esc(d ? d.name : 'Bilinmiyor')}</td>
+                    <td class="p-3 text-emerald-600 font-bold">${fmt(l.total || 0)}</td>
+                    <td class="p-3"><span class="px-2 py-1 text-[11px] rounded uppercase font-bold ${l.type === 'faturalı' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${l.type || 'Bekliyor'}</span> ${l.invoiceNo ? ' <span class="text-xs text-slate-500">#' + esc(l.invoiceNo) + '</span>' : ''}</td>
+                    <td class="p-3">${l.status === 'pending' ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Üretimde</span>' : (l.paymentStatus === 'paid' ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Tahsil Edildi</span>' : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Alacak</span>')}</td>
+                    <td class="p-3"><button onclick="openOrderEditModal('${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu sipariş silinecek ve ürün stoğu geri alınacak. Emin misiniz?', ()=>deleteLog('sales', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
+                    </tr>`;
+                }).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
+            } else {
+                return;
+            }
+            openModal('modal-history');
+        }
+
+        function deleteLog(type, id) {
+            if (type === 'filament') {
+                const idx = state.filamentLogs.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    state.filament.totalGr -= state.filamentLogs[idx].gr;
+                    state.filament.totalCost -= state.filamentLogs[idx].pr;
+                    state.filamentLogs.splice(idx, 1);
+                }
+            } else if (type === 'accessory') {
+                const idx = state.accessoryLogs.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    const log = state.accessoryLogs[idx];
+                    const acc = state.accessories.find(a => a.id === log.accId);
+                    if (acc) { acc.qty -= (log.qty || 0); acc.totalCost -= (log.total || log.price || 0); }
+                    state.accessoryLogs.splice(idx, 1);
+                }
+            } else if (type === 'productStock') {
+                const idx = state.productStockLogs.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    const log = state.productStockLogs[idx];
+                    const p = state.models.find(m => m.id === log.productId);
+                    if (p) {
+                        p.stock = (p.stock || 0) - (log.qty || 0);
+                        // Üretim iptali: reçeteye göre hammaddeyi stoğa geri ekle
+                        restoreMaterials(p, log.qty || 0);
+                    }
+                    state.productStockLogs.splice(idx, 1);
+                }
+            } else if (type === 'expense') {
+                state.transactions = state.transactions.filter(x => x.id !== id);
+            } else if (type === 'sales') {
+                const ord = state.orders.find(x => x.id === id);
+                // Sipariş silinince düşlen ürün stoğu geri alınır (hammadde üretim anında tüketilmişti)
+                if (ord && ord.stockDeducted) {
+                    (ord.items || []).forEach(it => {
+                        const m = state.models.find(mm => mm.id === it.mId);
+                        if (m) m.stock = (m.stock || 0) + (it.qty || 0);
+                    });
+                }
+                state.orders = state.orders.filter(x => x.id !== id);
+            }
+            saveState(); renderAll();
+            if (currentHistoryType) {
+                if (currentHistoryType.startsWith('accessoryById:')) openAccessoryHistory(currentHistoryType.split(':')[1]);
+                else if (currentHistoryType.startsWith('productById:')) openProductHistory(currentHistoryType.split(':')[1]);
+                else openHistory(currentHistoryType);
+            }
+        }
+
+        // ====
+        //  DÜZENLEME MODALI (tüm kayıt tipleri)
+        // ====
+        function openEditModal(type, id) {
+            editTarget = { type, id };
+            const el = $('edit-form');
+            const s = state.settings;
+
+            if (type === 'filament') {
+                const l = state.filamentLogs.find(x => x.id === id);
+                if (!l) return;
+                el.innerHTML = `
+                    <div class="space-y-3">
+                    <div><label class="block text-xs font-semibold mb-1">Miktar (gr)</label><input type="number" id="ed-1" value="${l.gr}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Tutar (₺)</label><input type="number" step="0.01" id="ed-2" value="${l.pr}" class="w-full border rounded p-2 text-sm"></div>
+                    <div class="flex items-center gap-2"><input type="checkbox" id="ed-3" class="w-4 h-4 accent-emerald-600" ${l.faturali ? 'checked' : ''}><label for="ed-3" class="text-xs font-semibold text-slate-600">Faturalı Alım</label></div>
+                    </div>`;
+            } else if (type === 'accessoryLog') {
+                const l = state.accessoryLogs.find(x => x.id === id);
+                if (!l) return;
+                el.innerHTML = `
+                    <div class="space-y-3">
+                    <div><label class="block text-xs font-semibold mb-1">Adet</label><input type="number" id="ed-1" value="${l.qty}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Birim Fiyat (₺)</label><input type="number" step="0.01" id="ed-2" value="${(l.unitPrice || 0)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div class="flex items-center gap-2"><input type="checkbox" id="ed-3" class="w-4 h-4 accent-emerald-600" ${l.faturali ? 'checked' : ''}><label for="ed-3" class="text-xs font-semibold text-slate-600">Faturalı Alım</label></div>
+                    <div><label class="block text-xs font-semibold mb-1">Tarih</label><input type="date" id="ed-4" value="${String(l.date || '').slice(0,10)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Not</label><input type="text" id="ed-5" value="${esc(l.note || '')}" class="w-full border rounded p-2 text-sm"></div>
+                    </div>`;
+            } else if (type === 'accessory') {
+                const a = state.accessories.find(x => x.id === id);
+                if (!a) return;
+                el.innerHTML = `
+                    <div class="space-y-3">
+                    <div><label class="block text-xs font-semibold mb-1">Aksesuar Adı</label><input type="text" id="ed-1" value="${esc(a.name)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Mevcut Stok (adet)</label><input type="number" id="ed-2" value="${a.qty}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Toplam Maliyet (₺)</label><input type="number" step="0.01" id="ed-3" value="${a.totalCost}" class="w-full border rounded p-2 text-sm"></div>
+                    </div>`;
+            } else if (type === 'expense') {
+                const l = state.transactions.find(x => x.id === id);
+                if (!l) return;
+                el.innerHTML = `
+                    <div class="space-y-3">
+                    <div><label class="block text-xs font-semibold mb-1">Açıklama</label><input type="text" id="ed-1" value="${esc(l.desc)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Tutar (₺)</label><input type="number" step="0.01" id="ed-2" value="${l.amount}" class="w-full border rounded p-2 text-sm"></div>
+                    <div class="flex items-center gap-2"><input type="checkbox" id="ed-3" class="w-4 h-4 accent-emerald-600" ${l.faturali ? 'checked' : ''}><label for="ed-3" class="text-xs font-semibold text-slate-600">Faturalı Gider</label></div>
+                    </div>`;
+            } else if (type === 'sales') {
+                const l = state.orders.find(x => x.id === id);
+                if (!l) return;
+                el.innerHTML = `
+                    <div class="space-y-3">
+                    <div><label class="block text-xs font-semibold mb-1">Toplam Tutar (₺)</label><input type="number" step="0.01" min="0" id="ed-1" value="${l.total || 0}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Fatura Türü</label>
+                    <select id="ed-2" class="w-full border rounded p-2 text-sm">
+                    <option value="faturalı" ${l.type === 'faturalı' ? 'selected' : ''}>Faturalı</option>
+                    <option value="faturasız" ${l.type === 'faturasız' ? 'selected' : ''}>Faturasız</option>
+                    </select></div>
+                    <div><label class="block text-xs font-semibold mb-1">Fatura No</label><input type="text" id="ed-3" value="${esc(l.invoiceNo || '')}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Tahsilat Durumu</label>
+                    <select id="ed-4" class="w-full border rounded p-2 text-sm">
+                    <option value="paid" ${l.paymentStatus === 'paid' ? 'selected' : ''}>Tahsil Edildi</option>
+                    <option value="pending" ${l.paymentStatus === 'pending' ? 'selected' : ''}>Alacak (Bekliyor)</option>
+                    </select></div>
+                    </div>`;
+            } else if (type === 'dealer') {
+                const d = state.dealers.find(x => x.id === id);
+                if (!d) return;
+                el.innerHTML = `
+                    <div class="space-y-3">
+                    <div><label class="block text-xs font-semibold mb-1">Firma / Platform Adı</label><input type="text" id="ed-1" value="${esc(d.name)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Kategori</label>
+                    <select id="ed-2" class="w-full border rounded p-2 text-sm">
+                    <option value="Fiziksel Mağaza" ${(d.category || d.type) === 'Fiziksel Mağaza' ? 'selected' : ''}>Fiziksel Mağaza</option>
+                    <option value="Bireysel Müşteri" ${(d.category || d.type) === 'Bireysel Müşteri' ? 'selected' : ''}>Bireysel Müşteri</option>
+                    <option value="E-Ticaret Kanalı" ${(d.category || d.type) === 'E-Ticaret Kanalı' ? 'selected' : ''}>E-Ticaret Kanalı</option>
+                    </select></div>
+                    </div>`;
+            } else if (type === 'asset') {
+                const a = state.assets.find(x => x.id === id);
+                if (!a) return;
+                el.innerHTML = `
+                    <div class="space-y-3">
+                    <div><label class="block text-xs font-semibold mb-1">Cihaz Adı</label><input type="text" id="ed-1" value="${esc(a.name)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Fatura (₺)</label><input type="number" step="0.01" id="ed-2" value="${a.price}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Amortisman Yılı</label><input type="number" id="ed-3" value="${a.years}" class="w-full border rounded p-2 text-sm"></div>
+                    </div>`;
+            } else if (type === 'productStock') {
+                const l = state.productStockLogs.find(x => x.id === id);
+                if (!l) return;
+                el.innerHTML = `
+                    <div class="space-y-3">
+                    <div><label class="block text-xs font-semibold mb-1">Adet</label><input type="number" id="ed-1" value="${l.qty}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Tarih</label><input type="date" id="ed-2" value="${String(l.date || '').slice(0,10)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Not</label><input type="text" id="ed-3" value="${esc(l.note || '')}" class="w-full border rounded p-2 text-sm"></div>
+                    </div>`;
+            } else return;
+            openModal('modal-edit');
+        }
+
+        function saveEdit() {
+            if (!editTarget) return;
+            const { type, id } = editTarget;
+            const kdvRate = state.settings.kdvRate;
+
+            if (type === 'filament') {
+                const l = state.filamentLogs.find(x => x.id === id);
+                if (!l) return;
+                const nGr = parseFloat($('ed-1').value), nPr = parseFloat($('ed-2').value);
+                const nFat = $('ed-3').checked;
+                if (isNaN(nGr) || isNaN(nPr) || nGr < 0 || nPr < 0) return alert('Geçersiz değer.');
+                state.filament.totalGr += (nGr - l.gr);
+                state.filament.totalCost += (nPr - l.pr);
+                l.gr = nGr; l.pr = nPr; l.faturali = nFat;
+                l.total = nPr;
+                const br = kdvBreakdown(nPr);
+                l.matrah = nFat ? br.matrah : nPr;
+                l.kdv = nFat ? br.kdv : 0;
+            } else if (type === 'accessoryLog') {
+                const l = state.accessoryLogs.find(x => x.id === id);
+                if (!l) return;
+                const nQty = parseInt($('ed-1').value);
+                const nUnit = parseFloat($('ed-2').value);
+                const nFat = $('ed-3').checked;
+                const nDate = $('ed-4').value || todayStr();
+                const nNote = $('ed-5').value.trim();
+                if (isNaN(nQty) || isNaN(nUnit) || nQty < 0 || nUnit < 0) return alert('Geçersiz değer.');
+                const nTotal = nQty * nUnit;
+                const acc = state.accessories.find(a => a.id === l.accId);
+                if (acc) {
+                    acc.qty += (nQty - (l.qty || 0));
+                    acc.totalCost += (nTotal - (l.total || l.price || 0));
+                }
+                l.qty = nQty;
+                l.unitPrice = nUnit;
+                l.total = nTotal;
+                l.price = nTotal;
+                l.faturali = nFat;
+                const br = kdvBreakdown(nTotal);
+                l.matrah = nFat ? br.matrah : nTotal;
+                l.kdv = nFat ? br.kdv : 0;
+                l.date = new Date(nDate).toISOString();
+                l.note = nNote;
+            } else if (type === 'accessory') {
+                const a = state.accessories.find(x => x.id === id);
+                if (!a) return;
+                const nName = $('ed-1').value.trim();
+                const nQty = parseInt($('ed-2').value), nCost = parseFloat($('ed-3').value);
+                if (!nName || isNaN(nQty) || isNaN(nCost) || nQty < 0 || nCost < 0) return alert('Geçersiz değer.');
+                a.name = nName; a.qty = nQty; a.totalCost = nCost;
+                state.models.forEach(m => { (m.recipe || []).forEach(r => { if (r.id === a.id) r.name = nName; }); });
+            } else if (type === 'expense') {
+                const l = state.transactions.find(x => x.id === id);
+                if (!l) return;
+                const nDesc = $('ed-1').value.trim(), nAmt = parseFloat($('ed-2').value);
+                const nFat = $('ed-3').checked;
+                if (!nDesc || isNaN(nAmt) || nAmt < 0) return alert('Geçersiz değer.');
+                l.desc = nDesc; l.amount = nAmt; l.faturali = nFat;
+                l.kdv = nFat ? nAmt - (nAmt / (1 + kdvRate / 100)) : 0;
+            } else if (type === 'sales') {
+                const l = state.orders.find(x => x.id === id);
+                if (!l) return;
+                const nTot = parseFloat($('ed-1').value);
+                const nType = $('ed-2').value;
+                const nInv = $('ed-3').value.trim();
+                const nPay = $('ed-4').value;
+                if (isNaN(nTot) || nTot < 0) return alert('Geçersiz değer.');
+                l.total = nTot;
+                // KDV yalnızca faturalıysa ayrıştırılır
+                if (nType === 'faturalı') {
+                    l.matrah = nTot / (1 + kdvRate / 100);
+                    l.kdv = nTot - l.matrah;
+                } else {
+                    l.matrah = nTot;
+                    l.kdv = 0;
+                }
+                l.type = nType;
+                l.invoiceNo = nType === 'faturalı' ? nInv : '';
+                l.paymentStatus = nPay;
+                if (nPay === 'paid' && !l.paidDate) l.paidDate = new Date().toISOString();
+                if (nPay === 'pending') { l.paidDate = ''; if (!l.dueDate) l.dueDate = todayStr(); }
+            } else if (type === 'dealer') {
+                const d = state.dealers.find(x => x.id === id);
+                if (!d) return;
+                const nName = $('ed-1').value.trim();
+                if (!nName) return alert('İsim boş olamaz.');
+                d.name = nName; d.category = $('ed-2').value; d.type = d.category;
+            } else if (type === 'asset') {
+                const a = state.assets.find(x => x.id === id);
+                if (!a) return;
+                const nName = $('ed-1').value.trim();
+                const nPrice = parseFloat($('ed-2').value), nYears = parseInt($('ed-3').value);
+                if (!nName || isNaN(nPrice) || isNaN(nYears) || nPrice < 0 || nYears < 1) return alert('Geçersiz değer.');
+                a.name = nName; a.price = nPrice; a.years = nYears;
+            } else if (type === 'productStock') {
+                const l = state.productStockLogs.find(x => x.id === id);
+                if (!l) return;
+                const nQty = parseInt($('ed-1').value);
+                const nDate = $('ed-2').value || todayStr();
+                const nNote = $('ed-3').value.trim();
+                if (isNaN(nQty) || nQty < 0) return alert('Geçersiz adet.');
+                const p = state.models.find(m => m.id === l.productId);
+                if (p) {
+                    const diff = nQty - (l.qty || 0);
+                    if (diff > 0) {
+                        const err = consumeMaterials(p, diff);
+                        if (err) return alert(err);
+                    } else if (diff < 0) {
+                        restoreMaterials(p, -diff);
+                    }
+                    p.stock = (p.stock || 0) + diff;
+                }
+                l.qty = nQty;
+                l.date = new Date(nDate).toISOString();
+                l.note = nNote;
+            }
+            editTarget = null;
+            saveState(); renderAll(); closeModal('modal-edit');
+            if (currentHistoryType) {
+                if (currentHistoryType.startsWith('accessoryById:')) openAccessoryHistory(currentHistoryType.split(':')[1]);
+                else if (currentHistoryType.startsWith('productById:')) openProductHistory(currentHistoryType.split(':')[1]);
+                else openHistory(currentHistoryType);
+            }
+        }
+
+        // ====
+        //  SİPARİŞ DÜZENLEME (Kalem bazlı)
+        // ====
+        function openOrderEditModal(orderId) {
+            const o = state.orders.find(x => x.id === orderId);
+            if (!o) return;
+            $('m-ord-id').value = o.id;
+            $('m-ord-dealer').innerHTML = state.dealers.map(d => `<option value="${d.id}" ${d.id === o.locId ? 'selected' : ''}>${esc(d.name)} (${esc(d.category || d.type || 'Bireysel Müşteri')})</option>`).join('');
+            $('m-ord-status').value = o.status || 'pending';
+            $('m-ord-type').value = o.type || '';
+            $('m-ord-inv').value = o.invoiceNo || '';
+            $('m-ord-pay').value = o.paymentStatus || 'pending';
+            $('m-ord-due').value = o.dueDate ? String(o.dueDate).slice(0, 10) : '';
+            $('m-ord-date').value = (o.date || new Date().toISOString()).slice(0, 10);
+            orderEditItems = (o.items || []).map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: parseFloat(it.unitPrice ?? 0) || 0 }));
+            renderOrderEditItems();
+            openModal('modal-order-edit');
+        }
+
+        function renderOrderEditItems() {
+            $('m-ord-items').innerHTML = orderEditItems.map((it, idx) => {
+                const options = state.models.map(m => `<option value="${m.id}" ${m.id === it.mId ? 'selected' : ''}>${esc(m.name)} (stok: ${m.stock || 0})</option>`).join('');
+                return `<div class="grid grid-cols-12 gap-2 items-end">
+                    <div class="col-span-6"><label class="block text-[10px] mb-1">Ürün</label><select onchange="orderEditItems[${idx}].mId=this.value;renderOrderEditTotals()" class="w-full border rounded p-2 text-xs">${options}</select></div>
+                    <div class="col-span-2"><label class="block text-[10px] mb-1">Adet</label><input type="number" min="1" value="${it.qty}" onchange="orderEditItems[${idx}].qty=parseFloat(this.value)||0;renderOrderEditTotals()" class="w-full border rounded p-2 text-xs"></div>
+                    <div class="col-span-3"><label class="block text-[10px] mb-1">Birim Fiyat</label><input type="number" step="0.01" min="0" value="${it.unitPrice}" onchange="orderEditItems[${idx}].unitPrice=parseFloat(this.value)||0;renderOrderEditTotals()" class="w-full border rounded p-2 text-xs"></div>
+                    <div class="col-span-1"><button onclick="orderEditItems.splice(${idx},1);renderOrderEditItems()" class="w-full bg-rose-100 text-rose-700 rounded p-2 text-xs">Sil</button></div>
+                </div>`;
+            }).join('') || '<p class="text-xs text-slate-400">Kalem yok. + Kalem ile ekleyin.</p>';
+            renderOrderEditTotals();
+        }
+
+        function addOrderEditItem() {
+            const first = state.models[0];
+            if (!first) return alert('Önce ürün oluşturun.');
+            orderEditItems.push({ mId: first.id, qty: 1, unitPrice: first.price || 0 });
+            renderOrderEditItems();
+        }
+
+        function renderOrderEditTotals() {
+            // Matrahı birim fiyatlardan hesapla
+            const matrah = orderEditItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+            const isFaturali = $('m-ord-type').value === 'faturalı';
+            const rate = (state?.settings?.kdvRate || 20) / 100;
+
+            // Faturalıysa KDV ekle, değilse 0
+            const kdv = isFaturali ? matrah * rate : 0;
+            const total = matrah + kdv;
+
+            $('m-ord-total').innerText = fmt(total);
+            $('m-ord-net').innerText = fmt(matrah);
+            $('m-ord-kdv').innerText = fmt(kdv);
+        }
+
+        function saveOrderEdit() {
+            const orderId = $('m-ord-id').value;
+            const o = state.orders.find(x => x.id === orderId);
+            if (!o) return alert('Sipariş bulunamadı.');
+            if (!orderEditItems.length) return alert('En az bir sipariş kalemi olmalı.');
+
+            const newItems = orderEditItems.map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: parseFloat(it.unitPrice) || 0 }));
+            if (newItems.some(it => !it.mId || it.qty <= 0 || it.unitPrice < 0)) return alert('Kalem değerleri geçersiz.');
+
+            const newStatus = $('m-ord-status').value;
+            const newType = newStatus === 'delivered' ? $('m-ord-type').value : '';
+
+            // --- Ürün stok farkını yönet (hammadde üretim anında tüketilir, burada sadece ürün stoğu) ---
+            const oldDeducted = !!o.stockDeducted;
+            const stockMap = new Map(state.models.map(m => [m.id, m.stock || 0]));
+            if (oldDeducted) {
+                (o.items || []).forEach(it => stockMap.set(it.mId, (stockMap.get(it.mId) || 0) + (parseFloat(it.qty) || 0)));
+            }
+            for (const it of newItems) {
+                const cur = stockMap.get(it.mId) || 0;
+                if (cur < it.qty) return alert('Yetersiz stok: ' + (state.models.find(m => m.id === it.mId)?.name || it.mId));
+                stockMap.set(it.mId, cur - it.qty);
+            }
+            state.models.forEach(m => { m.stock = stockMap.get(m.id) || 0; });
+
+            // --- Tutarlar: önce fatura tipini al, sonra matrah/KDV/totali hesapla ---
+            const matrah = newItems.reduce((s, it) => s + (it.qty * it.unitPrice), 0);
+            const rate = (state.settings.kdvRate || 20) / 100;
+
+            o.locId = $('m-ord-dealer').value;
+            o.items = newItems;
+            o.status = newStatus;
+            o.stockDeducted = true;
+            o.type = newType;
+            o.matrah = matrah;
+            o.kdv = newType === 'faturalı' ? matrah * rate : 0;
+            o.total = o.matrah + o.kdv;
+            o.invoiceNo = newType === 'faturalı' ? $('m-ord-inv').value.trim() : '';
+            o.paymentStatus = $('m-ord-pay').value;
+            o.dueDate = $('m-ord-due').value || '';
+            o.date = new Date(($('m-ord-date').value || todayStr()) + 'T12:00:00').toISOString();
+            if (o.status === 'pending') {
+                o.invoiceNo = ''; o.deliveryDate = ''; o.paymentStatus = 'pending'; o.paidDate = '';
+            } else {
+                if (!o.deliveryDate) o.deliveryDate = new Date().toISOString();
+                if (o.paymentStatus === 'paid' && !o.paidDate) o.paidDate = new Date().toISOString();
+                if (o.paymentStatus === 'pending') o.paidDate = '';
+            }
+
+            saveState(); renderAll(); closeModal('modal-order-edit');
+        }
+
+        // ====
+        //  AYARLAR
+        // ====
+        function renderSettings() {
+            const s = state.settings;
+            if ($('set-kdv-rate')) $('set-kdv-rate').value = s.kdvRate;
+            if ($('set-target')) $('set-target').value = s.targetProfit;
+            if ($('set-low-fil')) $('set-low-fil').value = s.lowFilament;
+            if ($('set-low-acc')) $('set-low-acc').value = s.lowAccessory;
+
+            const cfg = getFbCfg();
+            $('fb-apikey').value = cfg.apiKey || '';
+            $('fb-authdomain').value = cfg.authDomain || '';
+            $('fb-projectid').value = cfg.projectId || '';
+            $('fb-storagebucket').value = cfg.storageBucket || '';
+            $('fb-senderid').value = cfg.messagingSenderId || '';
+            $('fb-appid').value = cfg.appId || '';
+            $('fb-collection').value = cfg.collection || 'ERP_Data';
+            $('fb-doc').value = cfg.doc || 'Main_Database_V51';
+
+            const br = s.brackets || [];
+            $('brackets-editor').innerHTML = br.map((b, i) => `
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 w-6">${i + 1}.</span>
+                    <input type="number" id="brk-limit-${i + 1}" placeholder="Üst sınır (₺)" value="${b.limit === null ? '' : b.limit}" class="flex-1 border rounded p-1.5 text-xs" ${i === br.length - 1 ? 'disabled' : ''}>
+                    <input type="number" id="brk-rate-${i + 1}" value="${b.rate}" class="w-20 border rounded p-1.5 text-xs">
+                    <span class="text-xs text-slate-500">%</span>
+                </div>`).join('');
+        }
+
+        function saveFirebaseConfig() {
+            const cfg = {
+                apiKey: $('fb-apikey').value.trim(),
+                authDomain: $('fb-authdomain').value.trim(),
+                projectId: $('fb-projectid').value.trim(),
+                storageBucket: $('fb-storagebucket').value.trim(),
+                messagingSenderId: $('fb-senderid').value.trim(),
+                appId: $('fb-appid').value.trim(),
+                collection: $('fb-collection').value.trim() || 'ERP_Data',
+                doc: $('fb-doc').value.trim() || 'Main_Database_V51'
+            };
+            if (!cfg.apiKey || !cfg.projectId) return alert('apiKey ve projectId zorunludur.');
+            localStorage.setItem(LS_FB, JSON.stringify(cfg));
+            alert('Firebase config kaydedildi. Sayfa yeniden yükleniyor...');
+            location.reload();
+        }
+
+        // ====
+        //  YEDEKLEME
+        // ====
+        function exportBackup() {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'mete3d_yedek_' + todayStr() + '.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    state = normalizeState(data);
+                    saveState(); renderAll();
+                    alert('Yedek başarıyla yüklendi.');
+                } catch (err) {
+                    alert('Geçersiz yedek dosyası: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function resetData() {
+            state = normalizeState(null);
+            saveState(); renderAll();
+            alert('Tüm veriler sıfırlandı.');
+        }
+
+        // ====
+        //  BAŞLAT
+        // ====
+        initFirebase();
+    </script>
+</body>
+</html>
