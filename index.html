@@ -754,7 +754,7 @@
                     <div><label class="text-xs font-semibold text-slate-600">Düşük Filament Uyarısı (gr)</label><input type="number" id="set-low-fil" class="w-full border rounded p-2 text-sm mt-1"></div>
                     <div><label class="text-xs font-semibold text-slate-600">Düşük Aksesuar Uyarısı (adet)</label><input type="number" id="set-low-acc" class="w-full border rounded p-2 text-sm mt-1"></div>
                     </div>
-                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2">Gelir Vergisi Dilimleri</h4>
+                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2">Gelir Vergisi Dilimleri (2026 — Ticari Kazanç)</h4>
                     <div class="space-y-2 text-sm" id="brackets-editor">
                     <!-- JS Injected -->
                     </div>
@@ -1005,7 +1005,7 @@
                     <input type="text" id="m-gift-note" class="w-full border rounded p-2 text-sm" placeholder="Örn: Müşteri jesti, reklam amaçlı">
                 </div>
                 <div class="bg-amber-50 border border-amber-200 rounded p-3 text-[11px] text-amber-800">
-                    Stok düşülür (üretilen ürünlerde filament ve reçete aksesuarları dahil) ancak bu işlem <b>ciroya, KDV'ye ve sipariş listesine yazılmaz</b>. Kayıt, Raporlar sekmesindeki "Hediye Verilen Ürünler" bölümünde izlenir.
+                    Ürün stoğundan düşülür (hammadde/aksesuar düşümü üretim anında yapıldığı için tekrar düşülmez) ancak bu işlem <b>ciroya, KDV'ye ve sipariş listesine yazılmaz</b>. Kayıt, Raporlar sekmesindeki "Hediye Verilen Ürünler" bölümünde izlenir.
                 </div>
             </div>
             <div class="p-4 border-t bg-slate-50 flex justify-end rounded-b-xl">
@@ -1762,7 +1762,7 @@
             const ptype = m.ptype || 'uretilen';
             const isHazir = ptype === 'hazir';
             $('m-prd-cost-section').classList.toggle('hidden', !isHazir);
-            $('m-prd-stock-title-hint').innerText = m.name + ' — ' + (isHazir ? 'Hazır ürün: alış maliyetiyle stok girişi' : (ptype === 'hizmet' ? 'Hizmet ürünü: stok takibi gerekmez' : 'Üretim: bitmiş ürün stoğa eklenecek'));
+            $('m-prd-stock-title-hint').innerText = m.name + ' — ' + (isHazir ? 'Hazır ürün: alış maliyetiyle stok girişi' : (ptype === 'hizmet' ? 'Hizmet ürünü: stok takibi gerekmez' : 'Üretim: bitmiş ürün stoğa eklenir; reçete kadar filament ve aksesuar hammadde stoğundan otomatik düşülür (kayıt silinirse geri iade edilir)'));
             openModal('modal-product-stock');
         }
 
@@ -1787,6 +1787,42 @@
                 log.faturali = faturali;
                 log.matrah = faturali ? br.matrah : total;
                 log.kdv = faturali ? br.kdv : 0;
+            }
+            if (ptype === 'uretilen') {
+                // ÜRETİM: bitmiş ürün stoğa girerken reçete (BOM) kadar filament ve aksesuar
+                // hammadde stoğundan otomatik düşülür. Düşülen miktarlar kayda yazılır;
+                // kayıt silinirse aynı miktarlar hammadde stoğuna geri iade edilir.
+                const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+                const usedFil = (m.filGr || 0) * qty;
+                const accUse = [];
+                (m.recipe || []).forEach(r => {
+                    const need = (r.qty || 0) * qty;
+                    if (!(need > 0)) return;
+                    accUse.push({ r, acc: state.accessories.find(a => a.id === r.id), need });
+                });
+                const missing = [];
+                if (usedFil > (state.filament.totalGr || 0))
+                    missing.push('Filament: ' + fmtN(usedFil) + ' gr gerekli, stokta ' + fmtN(state.filament.totalGr || 0) + ' gr var');
+                accUse.forEach(u => {
+                    if (u.acc && u.need > (u.acc.qty || 0))
+                        missing.push((u.r.name || 'Aksesuar') + ': ' + u.need + ' adet gerekli, stokta ' + (u.acc.qty || 0) + ' adet var');
+                });
+                if (missing.length)
+                    return alert('Bu üretim için hammadde/aksesuar yetersiz:\n• ' + missing.join('\n• ') + '\n\nÖnce "Hammadde & Aksesuar" sekmesinden stok girişi yapın veya üretim adedini azaltın.');
+                if (usedFil > 0) {
+                    state.filament.totalGr -= usedFil;
+                    state.filament.totalCost -= usedFil * filAvg;
+                    log.usedFil = usedFil;
+                    log.usedFilCost = usedFil * filAvg;
+                }
+                log.usedAcc = [];
+                accUse.forEach(u => {
+                    if (!u.acc) return;
+                    const accAvg = u.acc.qty > 0 ? (u.acc.totalCost / u.acc.qty) : 0;
+                    u.acc.qty -= u.need;
+                    u.acc.totalCost -= u.need * accAvg;
+                    log.usedAcc.push({ id: u.r.id, name: u.r.name, qty: u.need, cost: u.need * accAvg });
+                });
             }
             m.stock = (m.stock || 0) + qty;
             state.productStockLogs.push(log);
@@ -1931,7 +1967,6 @@
             }
 
             let tot = 0;
-            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
 
             const items = posCart.map(c => {
                 const m = state.models.find(x => x.id === c.mId);
@@ -1940,24 +1975,10 @@
                 tot += unitPrice * qty;
                 const ptype = m.ptype || 'uretilen';
 
-                // Ürün stoğunu düş (hizmet ürünlerinde stok yok)
+                // Ürün stoğunu düş (hizmet ürünlerinde stok yok).
+                // Hammadde/aksesuar düşümü artık ÜRETİM anında ("Ürüne Stok Ekle") yapılır;
+                // satışta yalnızca bitmiş ürün stoğu düşer — çift düşüm önlenir.
                 if (ptype !== 'hizmet') m.stock = (m.stock || 0) - qty;
-
-                // Sadece ÜRETİLEN ürünlerde reçetedeki filament ve aksesuarlar orantılı düşer
-                if (ptype === 'uretilen') {
-                    const usedFil = (m.filGr || 0) * qty;
-                    state.filament.totalGr -= usedFil;
-                    state.filament.totalCost -= (usedFil * filAvg);
-                    (m.recipe || []).forEach(r => {
-                        const acc = state.accessories.find(a => a.id === r.id);
-                        if (acc && acc.qty > 0) {
-                            const accAvg = acc.totalCost / acc.qty;
-                            const usedAcc = r.qty * qty;
-                            acc.qty -= usedAcc;
-                            acc.totalCost -= (usedAcc * accAvg);
-                        }
-                    });
-                }
                 return { mId: c.mId, qty, unitPrice };
             });
 
@@ -2785,31 +2806,18 @@
                 if ((m.ptype || 'uretilen') !== 'hizmet' && (m.stock || 0) < c.qty)
                     return alert(m.name + ' için stok yetersiz.');
             }
-            // Maliyetleri stok düşümünden ÖNCE hesapla
+            // Maliyetleri hesapla ve yalnızca ÜRÜN stoğunu düş.
+            // Hammadde/aksesuar düşümü üretim anında ("Ürüne Stok Ekle") yapıldığı için
+            // hediye fişinde tekrar düşülmez — çift düşüm önlenir.
             const items = posCart.map(c => {
                 const m = state.models.find(x => x.id === c.mId);
                 const qty = parseFloat(c.qty) || 0;
                 return { mId: m.id, name: m.name, qty, cost: productCost(m) * qty };
             });
-            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
             items.forEach(it => {
                 const m = state.models.find(x => x.id === it.mId);
                 const ptype = m.ptype || 'uretilen';
                 if (ptype !== 'hizmet') m.stock = (m.stock || 0) - it.qty;
-                if (ptype === 'uretilen') {
-                    const usedFil = (m.filGr || 0) * it.qty;
-                    state.filament.totalGr -= usedFil;
-                    state.filament.totalCost -= (usedFil * filAvg);
-                    (m.recipe || []).forEach(r => {
-                        const acc = state.accessories.find(a => a.id === r.id);
-                        if (acc && acc.qty > 0) {
-                            const aAvg = acc.totalCost / acc.qty;
-                            const used = r.qty * it.qty;
-                            acc.qty -= used;
-                            acc.totalCost -= (used * aAvg);
-                        }
-                    });
-                }
             });
             state.giftLogs.push({ id: 'GFT' + Date.now(), date: new Date().toISOString(), to, note, items, totalCost: items.reduce((s, i) => s + i.cost, 0) });
             posCart = [];
@@ -3017,11 +3025,19 @@
             const m = state.models.find(x => x.id === prodId);
             if (!m) return;
             $('hist-title').innerText = 'Stok Geçmişi: ' + m.name;
-            $('hist-thead').innerHTML = '<tr><th class="p-2">Tarih</th><th class="p-2 text-center">Adet</th><th class="p-2 text-right">Birim Alış</th><th class="p-2 text-right">Toplam</th><th class="p-2">Fatura</th><th class="p-2">Not</th><th class="p-2 text-center">İşlem</th></tr>';
+            $('hist-thead').innerHTML = '<tr><th class="p-2">Tarih</th><th class="p-2 text-center">Adet</th><th class="p-2">Kullanılan Hammadde</th><th class="p-2 text-right">Birim Alış</th><th class="p-2 text-right">Toplam</th><th class="p-2">Fatura</th><th class="p-2">Not</th><th class="p-2 text-center">İşlem</th></tr>';
             const logs = state.productStockLogs.filter(l => l.productId === prodId).sort((a, b) => new Date(b.date) - new Date(a.date));
-            $('hist-tbody').innerHTML = logs.map(l =>
-                `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 text-center font-bold text-emerald-700">+${l.qty}</td><td class="p-2 text-right">${l.unitCost != null ? l.unitCost.toFixed(2) + ' ₺' : '-'}</td><td class="p-2 text-right">${l.total != null ? fmt(l.total) : '-'}</td><td class="p-2">${l.faturali ? 'Faturalı' : (l.unitCost != null ? 'Faturasız' : '-')}</td><td class="p-2">${esc(l.note || '')}</td><td class="p-2 text-center"><button onclick="deleteLog('productStock','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`
-            ).join('') || histEmpty(7);
+            $('hist-tbody').innerHTML = logs.map(l => {
+                // Üretim kayıtlarında düşülen hammadde/aksesuar miktarları gösterilir
+                let matHtml = '<span class="text-slate-400">-</span>';
+                if ((l.usedFil || 0) > 0 || (l.usedAcc || []).length) {
+                    const parts = [];
+                    if ((l.usedFil || 0) > 0) parts.push(fmtN(l.usedFil) + ' gr filament');
+                    (l.usedAcc || []).forEach(u => parts.push((u.qty || 0) + 'x ' + esc(u.name || 'Aksesuar')));
+                    matHtml = '<span class="text-sky-700 font-semibold">' + parts.join(' · ') + '</span>';
+                }
+                return `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 text-center font-bold text-emerald-700">+${l.qty}</td><td class="p-2 text-xs">${matHtml}</td><td class="p-2 text-right">${l.unitCost != null ? l.unitCost.toFixed(2) + ' ₺' : '-'}</td><td class="p-2 text-right">${l.total != null ? fmt(l.total) : '-'}</td><td class="p-2">${l.faturali ? 'Faturalı' : (l.unitCost != null ? 'Faturasız' : '-')}</td><td class="p-2">${esc(l.note || '')}</td><td class="p-2 text-center"><button onclick="deleteLog('productStock','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`;
+            }).join('') || histEmpty(8);
             openModal('modal-history');
         }
 
@@ -3084,9 +3100,27 @@
             } else if (type === 'productStock') {
                 const l = state.productStockLogs.find(x => x.id === id);
                 if (!l) return;
-                askConfirm('Stok giriş kaydı silinecek ve üründen düşülecek. Emin misiniz?', () => {
+                const isUretimKaydi = ((l.usedFil || 0) > 0) || (Array.isArray(l.usedAcc) && l.usedAcc.length > 0);
+                let delMsg;
+                if (isUretimKaydi) {
+                    const accCount = (l.usedAcc || []).reduce((s, u) => s + (u.qty || 0), 0);
+                    delMsg = 'Bu ÜRETİM kaydı silinecek: üründen ' + (l.qty || 0) + ' adet düşülecek ve harcanan ' + fmtN(l.usedFil || 0) + ' gr filament' + (accCount > 0 ? ' + ' + accCount + ' adet aksesuar' : '') + ' hammadde stoğuna geri iade edilecek. Emin misiniz?';
+                } else {
+                    delMsg = 'Stok giriş kaydı silinecek ve üründen düşülecek. Emin misiniz?';
+                }
+                askConfirm(delMsg, () => {
                     const m = state.models.find(x => x.id === l.productId);
                     if (m) m.stock = Math.max(0, (m.stock || 0) - (l.qty || 0));
+                    // Üretim anında düşülen filament/aksesuar, kayıtta saklanan miktar ve maliyetle
+                    // hammadde stoğuna geri iade edilir (üretim düşümünün tam tersi işlemi).
+                    if ((l.usedFil || 0) > 0) {
+                        state.filament.totalGr += l.usedFil;
+                        state.filament.totalCost += (l.usedFilCost != null ? l.usedFilCost : 0);
+                    }
+                    (l.usedAcc || []).forEach(u => {
+                        const acc = state.accessories.find(a => a.id === u.id);
+                        if (acc) { acc.qty += (u.qty || 0); acc.totalCost += (u.cost || 0); }
+                    });
                     state.productStockLogs = state.productStockLogs.filter(x => x.id !== id);
                     saveState(); renderAll();
                 });
