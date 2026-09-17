@@ -472,7 +472,7 @@
                         <button onclick="changeYear(1)" class="px-3.5 py-2 text-slate-500 hover:bg-slate-100 active:bg-slate-200 font-bold" title="Sonraki yıl"><i class="ph-bold ph-caret-right"></i></button>
                     </div>
                 </div>
-                <p class="text-sm text-slate-500 mb-6">Yasal matrahınız, KDV durumunuz ve demirbaş amortismanlarınız. Yıl seçicisiyle geçmiş/ilerideki yıllara bakabilirsiniz (örn. 2026 yılının beyanname rakamları için 2026'yı seçin — vergi takvimi ve dönem rakamları seçilen yıla göre hesaplanır). Tüm hesaplar tahminidir; kesin rakamlar için mali müşavirinize danışın.</p>
+                <p class="text-sm text-slate-500 mb-6">Yasal matrahınız, KDV durumunuz ve demirbaş amortismanlarınız. Yıl seçicisiyle geçmiş/ilerideki yıllara bakabilirsiniz (örn. 2026 yılının beyanname rakamları için 2026'yı seçin — vergi takvimi ve dönem rakamları seçilen yıla göre hesaplanır). Sabit giderler ve vergi dilimleri de seçilen yılın kendi ayarlarından okunur; geçmiş bir yıl kilitliyse sonraki ayar değişiklikleri o yılın rakamlarını etkilemez. Tüm hesaplar tahminidir; kesin rakamlar için mali müşavirinize danışın.</p>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -501,18 +501,24 @@
                     <div class="flex justify-between border-t border-slate-200 pt-2 mt-2"><span>Ödenecek KDV:</span><b class="text-rose-700 text-sm" id="ui-kdv-odenecek">0 ₺</b></div>
                     <div class="flex justify-between"><span>Devreden KDV:</span><b class="text-emerald-700" id="ui-kdv-devreden">0 ₺</b></div>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-4 bg-slate-50 p-2 rounded">Faturalı satışlarınızın KDV'si "Ödenecek KDV" havuzuna, faturalı alımlarınızın KDV'si ise mahsuplaşma için "KDV Giren"e işlenir. Hazır ürün alımlarınız da faturalı işaretlerse buraya dahil olur.</p>
+                    <p class="text-[11px] text-slate-400 mt-4 bg-slate-50 p-2 rounded">Faturalı satışlarınızın KDV'si "Ödenecek KDV" havuzuna, faturalı alımlarınızın KDV'si ise mahsuplaşma için "KDV Giren"e işlenir. Hazır ürün alımlarınız da faturalı işaretlerse buraya dahil olur. KDV tutarları kaydedildikleri andaki oranla saklanır; oranı sonradan değiştirmek geçmiş rakamları değiştirmez.</p>
                     </div>
 
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-1 flex flex-col">
-                    <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Sabit Gider Ayarları (Aylık)</h3>
+                    <h3 class="font-bold text-slate-800 mb-2 border-b pb-2">Sabit Gider Ayarları (Aylık) — <span class="text-sky-700" id="acc-year-tag">2026</span></h3>
+                    <div id="year-settings-status" class="text-[11px] bg-slate-50 border border-slate-200 rounded p-2 mb-3 flex items-center justify-between gap-2 flex-wrap"></div>
                     <div class="grid grid-cols-2 gap-4 flex-1">
                     <div><label class="text-xs text-slate-500">Mali Müşavir (₺)</label><input type="number" id="set-musavir" class="w-full border rounded p-1.5 text-sm font-semibold mt-1" onchange="saveSettings()"></div>
                     <div><label class="text-xs text-slate-500">KDV Damga (₺)</label><input type="number" id="set-kdv" class="w-full border rounded p-1.5 text-sm font-semibold mt-1" onchange="saveSettings()"></div>
                     <div><label class="text-xs text-slate-500">Muhtasar Damga (₺)</label><input type="number" id="set-muh" class="w-full border rounded p-1.5 text-sm font-semibold mt-1" onchange="saveSettings()"></div>
                     <div><label class="text-xs text-slate-500">Geçici V. Damga (₺)</label><input type="number" id="set-gec" class="w-full border rounded p-1.5 text-sm font-semibold mt-1" onchange="saveSettings()"></div>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-3">Detaylı ayarlar (KDV oranı, vergi dilimleri) için <button onclick="switchTab('tab-settings')" class="text-sky-600 font-semibold underline">Ayarlar</button> sekmesine bakın.</p>
+                    <details class="mt-3 border-t border-slate-100 pt-2">
+                    <summary class="text-xs font-semibold text-slate-600 cursor-pointer select-none">Bu Yılın Gelir Vergisi Dilimleri</summary>
+                    <div id="year-brackets-editor" class="space-y-2 mt-2"></div>
+                    <button onclick="saveYearBrackets()" class="mt-2 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-[11px] font-bold">Bu Yılın Dilimlerini Kaydet</button>
+                    </details>
+                    <p class="text-[11px] text-slate-400 mt-3">KDV oranı ve hedef kâr genel ayardır (<button onclick="switchTab('tab-settings')" class="text-sky-600 font-semibold underline">Ayarlar</button> sekmesi); sabit giderler ve dilimler bu karttan seçili yıla göre düzenlenir.</p>
                     </div>
                 </div>
 
@@ -550,6 +556,7 @@
                     <tbody id="ui-assets-list" class="divide-y divide-slate-100"></tbody>
                     </table>
                     </div>
+                    <p class="text-[11px] text-slate-400 mt-2">Amortisman, yıllık raporlarda yalnızca cihazın alım yılından itibaren sayılır; sonradan eklenen bir demirbaş geçmiş yılların rakamlarını değiştirmez.</p>
                 </div>
 
                 <h3 class="font-bold text-slate-800 mb-3">12 Aylık Vergi Takvimi (<span id="cal-year">2026</span>)</h3>
@@ -739,14 +746,15 @@
 
                     <!-- İşletme Ayarları -->
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph-fill ph-sliders text-emerald-500"></i> İşletme Ayarları</h3>
+                    <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><i class="ph-fill ph-sliders text-emerald-500"></i> İşletme Ayarları (Genel)</h3>
+                    <p class="text-[11px] text-slate-500 mb-3">Genel ayarlar, kilidi açık yıllar için geçerlidir (şu anki yıl: <b id="genel-year-label"></b>). Geçmiş yılların rakamlarının değişmemesi için Muhasebe & Vergi sekmesinde ilgili yılı seçip "Bu Yılı Kilitle" ile dondurun; kilitli yılın sabit giderleri ve vergi dilimleri oradan yıla özel düzenlenir.</p>
                     <div class="grid grid-cols-2 gap-4 mb-4">
                     <div><label class="text-xs font-semibold text-slate-600">KDV Oranı (%)</label><input type="number" id="set-kdv-rate" class="w-full border rounded p-2 text-sm mt-1"></div>
                     <div><label class="text-xs font-semibold text-slate-600">Varsayılan Hedef Kâr Marjı (%)</label><input type="number" id="set-target" class="w-full border rounded p-2 text-sm mt-1"></div>
                     <div><label class="text-xs font-semibold text-slate-600">Düşük Filament Uyarısı (gr)</label><input type="number" id="set-low-fil" class="w-full border rounded p-2 text-sm mt-1"></div>
                     <div><label class="text-xs font-semibold text-slate-600">Düşük Aksesuar Uyarısı (adet)</label><input type="number" id="set-low-acc" class="w-full border rounded p-2 text-sm mt-1"></div>
                     </div>
-                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2">Gelir Vergisi Dilimleri (2026 — Ticari Kazanç)</h4>
+                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2">Gelir Vergisi Dilimleri</h4>
                     <div class="space-y-2 text-sm" id="brackets-editor">
                     <!-- JS Injected -->
                     </div>
@@ -939,14 +947,14 @@
     </div>
 
     <!-- ==== MODAL: POS ==== -->
-    <div id="modal-pos" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col border border-slate-200">
+    <div id="modal-pos" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-2 sm:p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] md:h-[80vh] flex flex-col border border-slate-200">
             <div class="p-4 border-b flex justify-between items-center bg-slate-800 text-white rounded-t-xl">
                 <h3 class="font-bold flex items-center gap-2"><i class="ph-bold ph-shopping-cart"></i> Yeni Sipariş Oluştur (POS)</h3>
                 <button onclick="closeModal('modal-pos')" class="hover:text-rose-400"><i class="ph-bold ph-x text-xl"></i></button>
             </div>
-            <div class="flex-1 flex overflow-hidden">
-                <div class="w-1/2 border-r flex flex-col p-4 bg-slate-50">
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
+                <div class="w-full md:w-1/2 border-b md:border-b-0 md:border-r flex flex-col p-3 md:p-4 bg-slate-50 min-h-0">
                     <label class="text-xs font-bold text-slate-500 mb-1">Müşteri / Bayi Seçimi</label>
                     <select id="pos-dealer" class="w-full border rounded p-2 text-sm mb-3 bg-white"></select>
 
@@ -958,7 +966,7 @@
                     <label class="text-xs font-bold text-slate-500 mb-1">Ürün Kataloğu <span class="font-normal text-slate-400">(stok durumuyla)</span></label>
                     <div id="pos-products" class="flex-1 overflow-y-auto space-y-2"></div>
                 </div>
-                <div class="w-1/2 flex flex-col p-4">
+                <div class="w-full md:w-1/2 flex flex-col p-3 md:p-4 min-h-0">
                     <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2 flex items-center gap-2">Sepet İçeriği
                     <span id="pos-cart-count" class="text-[10px] font-bold bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full">0 adet</span>
                     </h4>
@@ -968,7 +976,7 @@
                     <span>Toplam Tutar:</span>
                     <span id="pos-total">0.00 ₺</span>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col sm:flex-row gap-2">
                     <button onclick="openGiftModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-bold">Hediye Fişi Ver</button>
                     <button onclick="submitPosOrder()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold shadow-md">Siparişi Üretime Al</button>
                     </div>
@@ -1160,7 +1168,7 @@
         // ====
         //  METE 3D STUDIO — ERP & MUHASEBE PRO
         //  Tek dosyalık çözüm: Firebase Firestore + localStorage yedek
-        //  v6: Ürün kategorileri + ürün türleri (Üretilen / Hazır Ürün / Hizmet)
+        //  v7: Yıla özel ayarlar (settingsByYear) — geçmiş yılların rakamları donar
         // ====
 
         // --- Varsayılan Firebase Config (Ayarlar'dan değiştirilebilir) ---
@@ -1232,7 +1240,8 @@
                     { limit: 530000, rate: 35 },
                     { limit: null, rate: 40 }
                     ]
-                }
+                },
+                settingsByYear: {}
             };
         }
 
@@ -1248,11 +1257,25 @@
             st.settings = { ...def.settings, ...(s.settings || {}) };
             if (!Array.isArray(st.settings.brackets) || !st.settings.brackets.length) st.settings.brackets = def.settings.brackets;
 
+            // Yıla özel ayar kopyaları (kilitli yıllar) — eksik alanlar genel ayarlardan tamamlanır
+            st.settingsByYear = (s.settingsByYear && typeof s.settingsByYear === 'object' && !Array.isArray(s.settingsByYear)) ? s.settingsByYear : {};
+            Object.keys(st.settingsByYear).forEach(y => {
+                const ys = st.settingsByYear[y];
+                if (!ys || typeof ys !== 'object') { delete st.settingsByYear[y]; return; }
+                st.settingsByYear[y] = { ...def.settings, ...ys };
+                if (!Array.isArray(st.settingsByYear[y].brackets) || !st.settingsByYear[y].brackets.length)
+                    st.settingsByYear[y].brackets = st.settings.brackets.map(b => ({ ...b }));
+            });
+
+            // ÖNEMLİ: Kayıtlarda saklanan matrah/KDV korunur; yalnızca eski kayıtlarda alan yoksa
+            // türetilir. Böylece KDV oranı ileride değişse bile geçmiş kayıtların rakamları değişmez.
             st.filamentLogs.forEach(l => {
                 if (l.faturali === undefined) l.faturali = false;
-                const br = kdvBreakdown(l.pr || 0);
-                l.matrah = l.faturali ? br.matrah : (l.pr || 0);
-                l.kdv = l.faturali ? br.kdv : 0;
+                if (l.matrah === undefined || l.kdv === undefined) {
+                    const br = kdvBreakdown(l.pr || 0);
+                    l.matrah = l.faturali ? br.matrah : (l.pr || 0);
+                    l.kdv = l.faturali ? br.kdv : 0;
+                }
                 l.total = l.pr || 0;
             });
 
@@ -1268,9 +1291,11 @@
                 l.unitPrice = l.unitPrice ?? ((l.qty > 0) ? ((l.price || 0) / l.qty) : 0);
                 l.total = l.total ?? l.price ?? 0;
                 l.price = l.total;
-                const br = kdvBreakdown(l.total || 0);
-                l.matrah = l.faturali ? br.matrah : (l.total || 0);
-                l.kdv = l.faturali ? br.kdv : 0;
+                if (l.matrah === undefined || l.kdv === undefined) {
+                    const br = kdvBreakdown(l.total || 0);
+                    l.matrah = l.faturali ? br.matrah : (l.total || 0);
+                    l.kdv = l.faturali ? br.kdv : 0;
+                }
             });
 
             // Ürünler: tür + kategori alanlarını ekle (eski kayıtlar "Üretim" olarak varsayılanlanır)
@@ -1289,9 +1314,11 @@
                 if (l.unitCost !== undefined && l.unitCost !== null) {
                     if (l.total === undefined || l.total === null) l.total = (l.qty || 0) * l.unitCost;
                     if (l.faturali === undefined) l.faturali = false;
-                    const br = kdvBreakdown(l.total || 0);
-                    l.matrah = l.faturali ? br.matrah : (l.total || 0);
-                    l.kdv = l.faturali ? br.kdv : 0;
+                    if (l.matrah === undefined || l.kdv === undefined) {
+                        const br = kdvBreakdown(l.total || 0);
+                        l.matrah = l.faturali ? br.matrah : (l.total || 0);
+                        l.kdv = l.faturali ? br.kdv : 0;
+                    }
                 }
             });
 
@@ -1322,7 +1349,11 @@
                 }
             });
 
-            st.transactions.forEach(t => { if (t.faturali === undefined) t.faturali = false; if (t.kdv === undefined) t.kdv = 0; });
+            st.transactions.forEach(t => {
+                if (t.faturali === undefined) t.faturali = false;
+                if (t.kdv === undefined) t.kdv = 0;
+                if (t.matrah === undefined) t.matrah = t.faturali ? kdvBreakdown(t.amount || 0).matrah : (t.amount || 0);
+            });
             return st;
         }
 
@@ -1354,6 +1385,7 @@
                 const local = localStorage.getItem(LS_KEY);
                 state = normalizeState(local ? JSON.parse(local) : null);
             } catch (e) { state = normalizeState(null); }
+            autoLockPastYears();
             renderAll();
         }
 
@@ -1365,6 +1397,7 @@
                 dbRef.onSnapshot(doc => {
                     if (doc.exists) {
                     state = normalizeState(doc.data());
+                    autoLockPastYears();
                     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
                     setSync('ok');
                     renderAll();
@@ -1372,6 +1405,7 @@
                     const local = localStorage.getItem(LS_KEY);
                     if (local) { state = normalizeState(JSON.parse(local)); saveState(); }
                     else { state = normalizeState(null); saveState(); }
+                    autoLockPastYears();
                     renderAll();
                     }
                 }, err => { setSync('off'); loadLocalFallback(); });
@@ -1413,6 +1447,60 @@
 
         // --- Yıl seçici (Muhasebe & Vergi, Raporlar) ---
         function changeYear(delta) { currentYear += delta; renderAll(); }
+
+        // ==== YILA ÖZEL AYARLAR (geçmiş yılların rakamlarını dondurmak için) ====
+        // state.settings = genel (şablon) ayarlar; state.settingsByYear[yıl] = o yıl için donmuş kopya.
+        function realYear() { return new Date().getFullYear(); }
+        function settingsForYear(y) { return (state.settingsByYear && state.settingsByYear[y]) ? state.settingsByYear[y] : state.settings; }
+        function yearIsLocked(y) { return !!(state.settingsByYear && state.settingsByYear[y]); }
+        function lockYearSilent(y) {
+            if (yearIsLocked(y)) return false;
+            if (!state.settingsByYear) state.settingsByYear = {};
+            const src = state.settings;
+            state.settingsByYear[y] = { ...src, brackets: (src.brackets || []).map(b => ({ ...b })) };
+            return true;
+        }
+        function lockYear(y) { if (lockYearSilent(y)) { saveState(); renderAll(); } }
+        function unlockYear(y) {
+            if (state.settingsByYear && state.settingsByYear[y]) {
+                delete state.settingsByYear[y];
+                saveState(); renderAll();
+            }
+        }
+        // Uygulama açılışında: verisi olan ve hâlâ kilitli olmayan geçmiş yıllar, o günkü genel
+        // ayarlarla otomatik kilitlenir. Böylece yıl dönümünde eski yılın rakamları donar ve
+        // sonraki ayar değişiklikleri geçmişi etkilemez.
+        function autoLockPastYears() {
+            if (!state) return;
+            const ry = realYear();
+            const years = new Set();
+            state.orders.forEach(o => years.add(new Date(o.deliveryDate || o.date).getFullYear()));
+            state.filamentLogs.forEach(l => years.add(new Date(l.date).getFullYear()));
+            state.accessoryLogs.forEach(l => years.add(new Date(l.date).getFullYear()));
+            state.transactions.forEach(t => years.add(new Date(t.date).getFullYear()));
+            state.productStockLogs.forEach(l => { if (l.date) years.add(new Date(l.date).getFullYear()); });
+            let changed = false;
+            years.forEach(y => { if (y < ry && lockYearSilent(y)) changed = true; });
+            if (changed) {
+                try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+                if (dbRef) dbRef.set(state).catch(() => {});
+            }
+        }
+        // Muhasebe sekmesindeki "Bu Yılın Gelir Vergisi Dilimleri" editörünü kaydeder
+        function saveYearBrackets() {
+            const ys = settingsForYear(currentYear);
+            const list = ys.brackets || [];
+            const nb = [];
+            for (let i = 1; i <= list.length; i++) {
+                const limEl = $('ybrk-limit-' + i), rateEl = $('ybrk-rate-' + i);
+                if (!rateEl) continue;
+                const rate = parseFloat(rateEl.value);
+                if (isNaN(rate) || rate <= 0) continue;
+                const lim = (i === list.length) ? null : (parseFloat(limEl.value) || null);
+                nb.push({ limit: lim, rate });
+            }
+            if (nb.length) { ys.brackets = nb; saveState(); renderAll(); }
+        }
 
         // --- Onay Modalı (confirm yerine) ---
         function askConfirm(msg, fn) {
@@ -1584,8 +1672,8 @@
             const overheadPerUnit = yearlyFixed / (numProducts * 100);
             const totalCost = materialCost + overheadPerUnit;
 
-            const fin = finSummary();
-            const bracketRate = fin.bracketRate; // güncel vergi dilimi
+            const fin = finSummary(realYear());
+            const bracketRate = fin.bracketRate; // güncel yılın vergi dilimi
             const target = (parseFloat($('m-prod-target').value) || s.targetProfit || 30) / 100;
             const kdvRate = s.kdvRate / 100;
 
@@ -1994,7 +2082,8 @@
             const faturali = $('inp-exp-faturali').checked;
             const kdv = faturali ? amount - (amount / (1 + state.settings.kdvRate / 100)) : 0;
             state.transactions.push({
-                id: 'TRX' + Date.now(), desc, amount, date: new Date().toISOString(), type: 'out', faturali, kdv
+                id: 'TRX' + Date.now(), desc, amount, date: new Date().toISOString(), type: 'out', faturali, kdv,
+                matrah: faturali ? (amount - kdv) : amount
             });
             saveState(); renderAll(); e.target.reset();
         }
@@ -2004,15 +2093,18 @@
         // ====
         function saveSettings() {
             const s = state.settings;
-            s.musavir = parseFloat($('set-musavir').value) || 0;
-            s.kdvDamga = parseFloat($('set-kdv').value) || 0;
-            s.muhtasarDamga = parseFloat($('set-muh').value) || 0;
-            s.geciciDamga = parseFloat($('set-gec').value) || 0;
+            // Sabit gider alanları, Muhasebe sekmesinde seçili yılın ayarlarına yazılır:
+            // kilitli yıl → o yılın kendi kopyasına, kilitsiz yıl → genel ayarlara.
+            const ys = settingsForYear(currentYear);
+            if ($('set-musavir')) ys.musavir = parseFloat($('set-musavir').value) || 0;
+            if ($('set-kdv')) ys.kdvDamga = parseFloat($('set-kdv').value) || 0;
+            if ($('set-muh')) ys.muhtasarDamga = parseFloat($('set-muh').value) || 0;
+            if ($('set-gec')) ys.geciciDamga = parseFloat($('set-gec').value) || 0;
             if ($('set-kdv-rate')) s.kdvRate = parseFloat($('set-kdv-rate').value) || 20;
             if ($('set-target')) s.targetProfit = parseFloat($('set-target').value) || 30;
             if ($('set-low-fil')) s.lowFilament = parseFloat($('set-low-fil').value) || 500;
             if ($('set-low-acc')) s.lowAccessory = parseFloat($('set-low-acc').value) || 5;
-            // Vergi dilimleri
+            // Vergi dilimleri (genel)
             const newBrackets = [];
             for (let i = 1; i <= 5; i++) {
                 const limEl = $('brk-limit-' + i), rateEl = $('brk-rate-' + i);
@@ -2043,17 +2135,17 @@
             saveState(); renderAll();
         }
 
-        // --- Vergi hesaplamaları ---
-        function taxRateFor(matrah) {
-            const br = state.settings.brackets || [];
+        // --- Vergi hesaplamaları (cfg verilmezse genel ayarlar kullanılır) ---
+        function taxRateFor(matrah, cfg) {
+            const br = (cfg && cfg.brackets) || state.settings.brackets || [];
             for (const b of br) {
                 if (b.limit === null || matrah <= b.limit) return b.rate;
             }
             return br.length ? br[br.length - 1].rate : 15;
         }
 
-        function progressiveTax(matrah) {
-            const br = state.settings.brackets || [];
+        function progressiveTax(matrah, cfg) {
+            const br = (cfg && cfg.brackets) || state.settings.brackets || [];
             let tax = 0, prev = 0;
             for (const b of br) {
                 const lim = b.limit === null ? Infinity : b.limit;
@@ -2068,8 +2160,11 @@
         }
 
         // --- Finansal özet (tüm hesapların merkezi) ---
-        function finSummary() {
-            const s = state.settings;
+        // Nakit akışı ve alacaklar tüm zamanları kapsar; vergi rakamları ise verilen yılın
+        // kayıtları ve O YILIN ayarları (settingsByYear kopyası) ile hesaplanır.
+        function finSummary(year) {
+            const y = year || realYear();
+            const s = settingsForYear(y);
             let cashIn = 0, cashOut = 0;
             state.orders.forEach(o => { if (o.status === 'delivered' && o.paymentStatus === 'paid') cashIn += (o.total || 0); });
             state.transactions.forEach(t => { if (t.type === 'in') cashIn += t.amount; else cashOut += t.amount; });
@@ -2082,25 +2177,33 @@
             let alacak = 0;
             state.orders.forEach(o => { if (o.status === 'delivered' && o.paymentStatus === 'pending') alacak += (o.total || 0); });
 
+            // Vergi kalemleri: yalnızca belirtilen yılın kayıtları + o yılın ayarları
             let faturaliGelir = 0, kdvCikan = 0;
-            state.orders.forEach(o => { if (o.status === 'delivered' && o.type === 'faturalı') { faturaliGelir += (o.matrah || 0); kdvCikan += (o.kdv || 0); } });
+            state.orders.forEach(o => {
+                if (o.status === 'delivered' && o.type === 'faturalı') {
+                    const d = new Date(o.deliveryDate || o.date);
+                    if (d.getFullYear() !== y) return;
+                    faturaliGelir += (o.matrah || 0); kdvCikan += (o.kdv || 0);
+                }
+            });
 
             let faturaliGider = 0, kdvGiren = 0;
-            state.filamentLogs.forEach(l => { if (l.faturali) { faturaliGider += (l.matrah ?? 0); kdvGiren += (l.kdv ?? 0); } });
-            state.accessoryLogs.forEach(l => { if (l.faturali) { faturaliGider += (l.matrah ?? 0); kdvGiren += (l.kdv ?? 0); } });
-            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) { const br = kdvBreakdown(t.amount || 0); faturaliGider += br.matrah; kdvGiren += br.kdv; } });
-            state.productStockLogs.forEach(l => { if (l.total && l.faturali) { faturaliGider += (l.matrah || 0); kdvGiren += (l.kdv || 0); } });
+            const addFaturaliGider = (date, m, k) => { const d = new Date(date); if (d.getFullYear() === y) { faturaliGider += m; kdvGiren += k; } };
+            state.filamentLogs.forEach(l => { if (l.faturali) addFaturaliGider(l.date, l.matrah ?? (l.pr || 0), l.kdv ?? 0); });
+            state.accessoryLogs.forEach(l => { if (l.faturali) addFaturaliGider(l.date, l.matrah ?? (l.total ?? l.price ?? 0), l.kdv ?? 0); });
+            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addFaturaliGider(t.date, t.matrah ?? kdvBreakdown(t.amount || 0).matrah, t.kdv ?? 0); });
+            state.productStockLogs.forEach(l => { if (l.total && l.faturali) addFaturaliGider(l.date, l.matrah ?? 0, l.kdv ?? 0); });
 
             const yearlyFixed = (s.musavir * 12) + (s.kdvDamga * 12) + (s.muhtasarDamga * 12) + (s.geciciDamga * 4);
             let yearlyAst = 0;
-            state.assets.forEach(a => yearlyAst += (a.price || 0) / (a.years || 1));
+            state.assets.forEach(a => { const ay = new Date(a.date || Date.now()).getFullYear(); if (ay <= y) yearlyAst += (a.price || 0) / (a.years || 1); });
 
             const matrah = Math.max(0, faturaliGelir - faturaliGider - yearlyFixed - yearlyAst);
-            const yillikVergi = progressiveTax(matrah);
+            const yillikVergi = progressiveTax(matrah, s);
             const odenecekKdv = Math.max(0, kdvCikan - kdvGiren);
             const devredenKdv = Math.max(0, kdvGiren - kdvCikan);
 
-            return { cashIn, cashOut, netCash, alacak, faturaliGelir, faturaliGider, kdvCikan, kdvGiren, odenecekKdv, devredenKdv, matrah, yillikVergi, yearlyFixed, yearlyAst, bracketRate: taxRateFor(matrah) };
+            return { year: y, cashIn, cashOut, netCash, alacak, faturaliGelir, faturaliGider, kdvCikan, kdvGiren, odenecekKdv, devredenKdv, matrah, yillikVergi, yearlyFixed, yearlyAst, bracketRate: taxRateFor(matrah, s) };
         }
 
         // ====
@@ -2131,7 +2234,7 @@
 
         // --- Dashboard ---
         function renderDashboard() {
-            const fin = finSummary();
+            const fin = finSummary(realYear());
             const pendingCount = state.orders.filter(o => o.status === 'pending').length;
             const lowFil = state.filament.totalGr < state.settings.lowFilament;
             const lowAccs = state.accessories.filter(a => a.qty < state.settings.lowAccessory);
@@ -2143,8 +2246,8 @@
                 { label: 'Toplam Ciro', val: fmt(fin.cashIn), icon: 'ph-chart-line-up', cls: 'bg-emerald-50 border-emerald-200 text-emerald-800', ic: 'text-emerald-500' },
                 { label: 'Bekleyen Sipariş', val: pendingCount + ' adet', icon: 'ph-clock', cls: 'bg-amber-50 border-amber-200 text-amber-800', ic: 'text-amber-500' },
                 { label: 'Alacaklar (Cari)', val: fmt(fin.alacak), icon: 'ph-handshake', cls: 'bg-purple-50 border-purple-200 text-purple-800', ic: 'text-purple-500' },
-                { label: 'Ödenecek KDV', val: fmt(fin.odenecekKdv), icon: 'ph-receipt', cls: 'bg-rose-50 border-rose-200 text-rose-800', ic: 'text-rose-500' },
-                { label: 'Vergi Matrahı', val: fmt(fin.matrah), icon: 'ph-scales', cls: 'bg-indigo-50 border-indigo-200 text-indigo-800', ic: 'text-indigo-500' }
+                { label: 'Ödenecek KDV (Bu Yıl)', val: fmt(fin.odenecekKdv), icon: 'ph-receipt', cls: 'bg-rose-50 border-rose-200 text-rose-800', ic: 'text-rose-500' },
+                { label: 'Vergi Matrahı (Bu Yıl)', val: fmt(fin.matrah), icon: 'ph-scales', cls: 'bg-indigo-50 border-indigo-200 text-indigo-800', ic: 'text-indigo-500' }
             ];
             $('dash-kpis').innerHTML = kpis.map(k => `
                 <div class="rounded-xl border p-4 ${k.cls}">
@@ -2183,7 +2286,7 @@
             const lowProd = state.models.filter(m => (m.ptype || 'uretilen') !== 'hizmet' && (m.stock || 0) <= 0);
             if (lowProd.length) alerts.push({ icon: 'ph-package', txt: lowProd.length + ' üründe ürün stoğu tükendi', cls: 'bg-amber-50 border-amber-200 text-amber-800' });
             if (fin.alacak > 0) alerts.push({ icon: 'ph-handshake', txt: 'Bekleyen tahsilat: ' + fmt(fin.alacak), cls: 'bg-purple-50 border-purple-200 text-purple-800' });
-            if (fin.odenecekKdv > 0) alerts.push({ icon: 'ph-receipt', txt: 'Ödenecek KDV: ' + fmt(fin.odenecekKdv), cls: 'bg-rose-50 border-rose-200 text-rose-800' });
+            if (fin.odenecekKdv > 0) alerts.push({ icon: 'ph-receipt', txt: 'Bu yıl ödenecek KDV: ' + fmt(fin.odenecekKdv), cls: 'bg-rose-50 border-rose-200 text-rose-800' });
             if (!alerts.length) alerts.push({ icon: 'ph-check-circle', txt: 'Her şey yolunda, uyarı yok.', cls: 'bg-emerald-50 border-emerald-200 text-emerald-800' });
             $('dash-alerts').innerHTML = alerts.map(a => `
                 <div class="flex items-start gap-2 p-2.5 rounded-lg border text-xs font-semibold ${a.cls}">
@@ -2439,9 +2542,20 @@
 
         // --- Muhasebe ---
         function renderAccounting() {
-            const fin = finSummary();
+            const fin = finSummary(currentYear);
+            const cfg = settingsForYear(currentYear);
+            const locked = yearIsLocked(currentYear);
             $('acc-year').innerText = currentYear;
             $('cal-year').innerText = currentYear;
+            if ($('acc-year-tag')) $('acc-year-tag').innerText = currentYear;
+            const lockBox = $('year-settings-status');
+            if (lockBox) {
+                lockBox.innerHTML = locked
+                    ? `<span class="text-emerald-700 font-bold flex items-center gap-1"><i class="ph-fill ph-lock-simple"></i> ${currentYear}: yıla özel (kilitli) ayarlar kullanılıyor</span>
+                       <button onclick="unlockYear(${currentYear})" class="text-[11px] bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-1 rounded font-bold">Kilidi Aç</button>`
+                    : `<span class="text-slate-600 font-bold flex items-center gap-1"><i class="ph ph-lock-open"></i> ${currentYear}: genel ayarlar kullanılıyor (canlı)</span>
+                       <button onclick="lockYear(${currentYear})" class="text-[11px] bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-2 py-1 rounded font-bold">Bu Yılı Kilitle</button>`;
+            }
             $('ui-acc-matrah').innerText = fmt(fin.matrah);
             $('ui-acc-bracket').innerText = '%' + fin.bracketRate + ' Vergi Dilimindesiniz';
             $('ui-acc-gelir').innerText = fmt(fin.faturaliGelir);
@@ -2454,10 +2568,10 @@
             $('ui-kdv-odenecek').innerText = fmt(fin.odenecekKdv);
             $('ui-kdv-devreden').innerText = fmt(fin.devredenKdv);
 
-            $('set-musavir').value = state.settings.musavir;
-            $('set-kdv').value = state.settings.kdvDamga;
-            $('set-muh').value = state.settings.muhtasarDamga;
-            $('set-gec').value = state.settings.geciciDamga;
+            $('set-musavir').value = cfg.musavir;
+            $('set-kdv').value = cfg.kdvDamga;
+            $('set-muh').value = cfg.muhtasarDamga;
+            $('set-gec').value = cfg.geciciDamga;
 
             let yearlyAstExp = 0;
             $('ui-assets-list').innerHTML = state.assets.map(a => {
@@ -2475,12 +2589,24 @@
                 </tr>`;
             }).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Demirbaş yok.</td></tr>';
 
+            const yb = $('year-brackets-editor');
+            if (yb && !(document.activeElement && yb.contains(document.activeElement))) {
+                yb.innerHTML = (cfg.brackets || []).map((b, i) => {
+                    const isLast = i === ((cfg.brackets || []).length - 1);
+                    return `<div class="flex items-center gap-2 border border-slate-200 rounded p-2">
+                        <span class="text-xs font-bold text-slate-400 w-5">${i + 1}.</span>
+                        <div class="flex-1"><label class="text-[10px] text-slate-500 block">Üst Limit (₺${isLast ? ' — sınırsız' : ''})</label><input type="number" id="ybrk-limit-${i + 1}" value="${b.limit == null ? '' : b.limit}" ${isLast ? 'disabled placeholder="∞"' : ''} class="w-full border rounded p-1 text-sm"></div>
+                        <div class="w-20"><label class="text-[10px] text-slate-500 block">Oran (%)</label><input type="number" id="ybrk-rate-${i + 1}" value="${b.rate}" class="w-full border rounded p-1 text-sm"></div>
+                    </div>`;
+                }).join('');
+            }
+
             buildCalendar();
         }
 
         // --- 12 Aylık Vergi Takvimi (seçili yıla göre) ---
         function buildCalendar() {
-            const s = state.settings;
+            const s = settingsForYear(currentYear); // Seçili yılın KENDİ ayarları (kilitliyse o yılın kopyası)
             const kdvRate = s.kdvRate / 100;
             const y = currentYear; // Takvim, seçili yılın kayıtlarına göre hesaplanır
 
@@ -2493,15 +2619,17 @@
                     kdvByMonth[d.getMonth()] += o.kdv;
                 }
             });
-            const addKdvGiren = (date, amount) => {
+            // Giren KDV: kayıtta saklanan KDV tutarı kullanılır (kaydedildiği andaki oranla).
+            // Böylece ileride KDV oranı değişse bile geçmiş ayların hesapları değişmez.
+            const addKdvGiren = (date, kdvStored, amountFallback) => {
                 const d = new Date(date);
                 if (d.getFullYear() !== y) return;
-                kdvByMonth[d.getMonth()] -= (amount - amount / (1 + kdvRate));
+                kdvByMonth[d.getMonth()] -= (kdvStored != null ? kdvStored : (amountFallback - amountFallback / (1 + kdvRate)));
             };
-            state.filamentLogs.forEach(l => { if (l.faturali) addKdvGiren(l.date, l.pr); });
-            state.accessoryLogs.forEach(l => { if (l.faturali) addKdvGiren(l.date, l.price); });
-            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addKdvGiren(t.date, t.amount); });
-            state.productStockLogs.forEach(l => { if (l.total && l.faturali) addKdvGiren(l.date, l.total); });
+            state.filamentLogs.forEach(l => { if (l.faturali) addKdvGiren(l.date, l.kdv, l.pr || 0); });
+            state.accessoryLogs.forEach(l => { if (l.faturali) addKdvGiren(l.date, l.kdv, l.price || 0); });
+            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addKdvGiren(t.date, t.kdv, t.amount || 0); });
+            state.productStockLogs.forEach(l => { if (l.total && l.faturali) addKdvGiren(l.date, l.kdv, l.total || 0); });
 
             // Çeyreklik matrah (geçici vergi için) — yalnızca seçili yıl
             const qGelir = [0, 0, 0, 0], qGider = [0, 0, 0, 0];
@@ -2512,20 +2640,20 @@
                     qGelir[Math.floor(d.getMonth() / 3)] += o.matrah;
                 }
             });
-            const addQGider = (date, amount) => {
+            const addQGider = (date, matrahStored, amountFallback) => {
                 const d = new Date(date);
                 if (d.getFullYear() !== y) return;
-                qGider[Math.floor(d.getMonth() / 3)] += amount / (1 + kdvRate);
+                qGider[Math.floor(d.getMonth() / 3)] += (matrahStored != null ? matrahStored : amountFallback / (1 + kdvRate));
             };
-            state.filamentLogs.forEach(l => { if (l.faturali) addQGider(l.date, l.pr); });
-            state.accessoryLogs.forEach(l => { if (l.faturali) addQGider(l.date, l.price); });
-            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addQGider(t.date, t.amount); });
-            state.productStockLogs.forEach(l => { if (l.total && l.faturali) addQGider(l.date, l.total); });
+            state.filamentLogs.forEach(l => { if (l.faturali) addQGider(l.date, l.matrah, l.pr || 0); });
+            state.accessoryLogs.forEach(l => { if (l.faturali) addQGider(l.date, l.matrah, l.price || 0); });
+            state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addQGider(t.date, t.matrah, t.amount || 0); });
+            state.productStockLogs.forEach(l => { if (l.total && l.faturali) addQGider(l.date, l.matrah, l.total || 0); });
 
             const qNet = qGelir.map((g, i) => Math.max(0, g - qGider[i]));
-            const geciciVergi = qNet.map(q => q > 0 ? q * taxRateFor(q) / 100 : 0);
+            const geciciVergi = qNet.map(q => q > 0 ? q * taxRateFor(q, s) / 100 : 0);
 
-            const fin = finSummary();
+            const fin = finSummary(currentYear);
             const yillikVergi = fin.yillikVergi;
             const geciciToplam = geciciVergi[0] + geciciVergi[1] + geciciVergi[2];
             const kalanVergi = Math.max(0, yillikVergi - geciciToplam);
@@ -2704,12 +2832,13 @@
             const addExp = (date, amt) => { const d = new Date(date); if (d.getFullYear() === currentYear) gider[d.getMonth()] += amt; };
             state.filamentLogs.forEach(l => addExp(l.date, l.matrah != null ? l.matrah : (l.pr || 0)));
             state.accessoryLogs.forEach(l => addExp(l.date, l.matrah != null ? l.matrah : (l.total || l.price || 0)));
-            state.transactions.forEach(t => { if (t.type === 'out') addExp(t.date, t.faturali ? kdvBreakdown(t.amount || 0).matrah : (t.amount || 0)); });
+            state.transactions.forEach(t => { if (t.type === 'out') addExp(t.date, t.faturali ? (t.matrah ?? kdvBreakdown(t.amount || 0).matrah) : (t.amount || 0)); });
             state.productStockLogs.forEach(l => { if (l.total) addExp(l.date, l.matrah != null ? l.matrah : (l.faturali ? kdvBreakdown(l.total).matrah : l.total)); });
-            const s = state.settings;
+            // Seçili yılın KENDİ ayarları kullanılır (kilitliyse o yılın kopyası)
+            const s = settingsForYear(currentYear);
             const yearlyFixed = (s.musavir * 12) + (s.kdvDamga * 12) + (s.muhtasarDamga * 12) + (s.geciciDamga * 4);
             let yearlyAst = 0;
-            state.assets.forEach(a => yearlyAst += (a.price || 0) / (a.years || 1));
+            state.assets.forEach(a => { const ay = new Date(a.date || Date.now()).getFullYear(); if (ay <= currentYear) yearlyAst += (a.price || 0) / (a.years || 1); });
             for (let i = 0; i < 12; i++) gider[i] += yearlyFixed / 12 + yearlyAst / 12;
             return { gelir, gider };
         }
@@ -3039,6 +3168,7 @@
         // ====
         function renderSettings() {
             const s = state.settings;
+            if ($('genel-year-label')) $('genel-year-label').innerText = realYear();
             if ($('set-kdv-rate')) $('set-kdv-rate').value = s.kdvRate;
             if ($('set-target')) $('set-target').value = s.targetProfit;
             if ($('set-low-fil')) $('set-low-fil').value = s.lowFilament;
@@ -3096,6 +3226,7 @@
                 try { parsed = JSON.parse(r.result); } catch (e) { return alert('Geçersiz yedek dosyası.'); }
                 askConfirm('Yedek geri yüklenecek; mevcut veriler yedektekiyle değiştirilecek. Emin misiniz?', () => {
                     state = normalizeState(parsed);
+                    autoLockPastYears();
                     saveState(); renderAll();
                     alert('Yedek başarıyla geri yüklendi.');
                 });
@@ -3124,116 +3255,103 @@
             $('m-ord-inv').value = o.invoiceNo || '';
             $('m-ord-pay').value = o.paymentStatus === 'paid' ? 'paid' : 'pending';
             $('m-ord-due').value = o.dueDate || '';
-            $('m-ord-date').value = new Date(o.date).toISOString().slice(0, 10);
-            orderEditItems = (o.items || []).map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: it.unitPrice != null ? it.unitPrice : 0 }));
+            $('m-ord-date').value = (o.date || '').slice(0, 10);
+            orderEditItems = (o.items || []).map(it => ({ mId: it.mId, qty: it.qty, unitPrice: it.unitPrice }));
             renderOrderEditItems();
             openModal('modal-order-edit');
         }
 
         function renderOrderEditItems() {
             $('m-ord-items').innerHTML = orderEditItems.map((it, i) => {
-                const opts = state.models.map(m => `<option value="${m.id}" ${m.id === it.mId ? 'selected' : ''}>${esc(m.name)}</option>`).join('');
+                const m = state.models.find(x => x.id === it.mId);
+                const opts = state.models.map(x => `<option value="${x.id}" ${x.id === it.mId ? 'selected' : ''}>${esc(x.name)}</option>`).join('')
+                    + (m ? '' : `<option value="${it.mId}" selected>(Silinmiş ürün)</option>`);
                 return `<div class="flex gap-2 items-center">
-                    <select onchange="orderEditItemProductChanged(${i}, this.value)" class="flex-1 border rounded p-1.5 text-sm">${opts}</select>
-                    <input type="number" min="0" value="${it.qty}" onchange="orderEditItems[${i}].qty = parseFloat(this.value) || 0; renderOrderEditTotals()" class="w-16 border rounded p-1.5 text-sm text-center" title="Adet">
-                    <input type="number" min="0" step="0.01" value="${it.unitPrice}" onchange="orderEditItems[${i}].unitPrice = parseFloat(this.value) || 0; renderOrderEditTotals()" class="w-24 border rounded p-1.5 text-sm text-right" title="Birim Fiyat (KDV hariç)">
-                    <button onclick="orderEditItems.splice(${i}, 1); renderOrderEditItems()" class="text-rose-500 font-bold px-1">X</button>
+                    <select onchange="updateOrderEditItem(${i}, 'mId', this.value)" class="flex-1 border rounded p-1.5 text-sm">${opts}</select>
+                    <input type="number" min="0" value="${it.qty ?? 0}" onchange="updateOrderEditItem(${i}, 'qty', this.value)" class="w-16 border rounded p-1.5 text-sm" title="Adet">
+                    <input type="number" min="0" step="0.01" value="${it.unitPrice ?? 0}" onchange="updateOrderEditItem(${i}, 'unitPrice', this.value)" class="w-24 border rounded p-1.5 text-sm" title="Birim Fiyat (KDV hariç)">
+                    <button onclick="removeOrderEditItem(${i})" class="text-rose-500 font-bold px-1">X</button>
                 </div>`;
             }).join('') || '<p class="text-xs text-slate-400">Kalem yok. "+ Kalem" ile ekleyin.</p>';
             renderOrderEditTotals();
         }
 
-        function orderEditItemProductChanged(i, mId) {
-            const m = state.models.find(x => x.id === mId);
-            orderEditItems[i].mId = mId;
-            if (m) orderEditItems[i].unitPrice = m.price || 0;
+        function removeOrderEditItem(i) { orderEditItems.splice(i, 1); renderOrderEditItems(); }
+
+        function updateOrderEditItem(i, key, val) {
+            if (!orderEditItems[i]) return;
+            if (key === 'qty') orderEditItems[i].qty = Math.max(0, parseFloat(val) || 0);
+            else if (key === 'unitPrice') orderEditItems[i].unitPrice = Math.max(0, parseFloat(val) || 0);
+            else orderEditItems[i].mId = val;
             renderOrderEditItems();
         }
 
         function addOrderEditItem() {
-            if (!state.models.length) return alert('Önce Ürünler sekmesinden ürün ekleyin.');
-            const m = state.models[0];
-            orderEditItems.push({ mId: m.id, qty: 1, unitPrice: m.price || 0 });
+            const first = state.models[0];
+            if (!first) return alert('Önce Ürünler sekmesinden ürün ekleyin.');
+            orderEditItems.push({ mId: first.id, qty: 1, unitPrice: first.price || 0 });
             renderOrderEditItems();
         }
 
         function renderOrderEditTotals() {
-            const tot = orderEditItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
-            const type = $('m-ord-type') ? $('m-ord-type').value : '';
-            const kdv = type === 'faturalı' ? tot * ((state.settings.kdvRate || 20) / 100) : 0;
-            $('m-ord-total').innerText = fmt(tot + kdv);
-            $('m-ord-net').innerText = fmt(tot);
-            $('m-ord-kdv').innerText = fmt(kdv);
+            const matrah = orderEditItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+            const rate = (state?.settings?.kdvRate || 20) / 100;
+            const kdv = $('m-ord-type').value === 'faturalı' ? matrah * rate : 0;
+            if ($('m-ord-total')) $('m-ord-total').innerText = fmt(matrah + kdv);
+            if ($('m-ord-net')) $('m-ord-net').innerText = fmt(matrah);
+            if ($('m-ord-kdv')) $('m-ord-kdv').innerText = fmt(kdv);
         }
 
         function saveOrderEdit() {
             const o = state.orders.find(x => x.id === $('m-ord-id').value);
-            if (!o) return;
-            if (!orderEditItems.length) return alert('Sipariş en az bir kalem içermelidir.');
-            // Stok farklarını doğrula (hizmet ürünleri hariç)
-            const oldQ = {}, newQ = {};
-            if (o.stockDeducted !== false) {
-                (o.items || []).forEach(it => {
-                    const m = state.models.find(x => x.id === it.mId);
-                    if (m && (m.ptype || 'uretilen') !== 'hizmet') oldQ[it.mId] = (oldQ[it.mId] || 0) + (parseFloat(it.qty) || 0);
-                });
-            }
-            for (const it of orderEditItems) {
-                const m = state.models.find(x => x.id === it.mId);
-                if (!m) return alert('Kalemlerden biri geçersiz ürüne işaret ediyor. Lütfen kontrol edin.');
-                if ((m.ptype || 'uretilen') !== 'hizmet') newQ[it.mId] = (newQ[it.mId] || 0) + (parseFloat(it.qty) || 0);
-            }
-            for (const [mId, nq] of Object.entries(newQ)) {
-                const delta = nq - (oldQ[mId] || 0);
-                if (delta > 0) {
-                    const m = state.models.find(x => x.id === mId);
-                    if ((m.stock || 0) < delta) return alert(m.name + ': stok yetersiz (ek gereken ' + delta + ' adet). Mevcut: ' + (m.stock || 0));
-                }
-            }
-            new Set([...Object.keys(oldQ), ...Object.keys(newQ)]).forEach(mId => {
-                const delta = (newQ[mId] || 0) - (oldQ[mId] || 0);
-                const m = state.models.find(x => x.id === mId);
-                if (m && delta) m.stock = (m.stock || 0) - delta;
-            });
-            // Alanları güncelle
-            o.locId = $('m-ord-dealer').value || o.locId;
-            o.items = orderEditItems.map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: parseFloat(it.unitPrice) || 0 }));
-            o.matrah = o.items.reduce((s, it) => s + it.qty * it.unitPrice, 0);
-            const dv = $('m-ord-date').value;
-            if (dv) o.date = new Date(dv + 'T12:00:00').toISOString();
-            o.stockDeducted = true;
+            if (!o) return closeModal('modal-order-edit');
+            if (!orderEditItems.length) return alert('En az bir sipariş kalemi gerekli.');
             const newStatus = $('m-ord-status').value;
-            if (newStatus === 'pending') {
-                o.status = 'pending';
-                o.deliveryDate = ''; o.type = ''; o.invoiceNo = '';
-                o.kdv = 0; o.total = o.matrah;
-                o.paymentStatus = 'pending'; o.paidDate = '';
-                o.dueDate = $('m-ord-due').value || '';
-            } else {
-                o.status = 'delivered';
-                if (!o.deliveryDate) o.deliveryDate = new Date().toISOString();
-                o.type = $('m-ord-type').value;
-                o.invoiceNo = o.type === 'faturalı' ? $('m-ord-inv').value.trim() : '';
-                o.kdv = o.type === 'faturalı' ? o.matrah * ((state.settings.kdvRate || 20) / 100) : 0;
-                o.total = o.matrah + o.kdv;
-                o.paymentStatus = $('m-ord-pay').value;
-                if (o.paymentStatus === 'paid') { if (!o.paidDate) o.paidDate = new Date().toISOString(); o.dueDate = ''; }
-                else { o.paidDate = ''; o.dueDate = $('m-ord-due').value || todayStr(); }
+            const tracked = it => { const m = state.models.find(x => x.id === it.mId); return (m && (m.ptype || 'uretilen') !== 'hizmet') ? m : null; };
+
+            // Stok farkını hesapla (hizmet ürünleri hariç): eski kalemler geri eklenir, yeniler düşülür
+            const delta = {};
+            if (o.stockDeducted !== false) {
+                (o.items || []).forEach(it => { if (tracked(it)) delta[it.mId] = (delta[it.mId] || 0) + (parseFloat(it.qty) || 0); });
+                orderEditItems.forEach(it => { if (tracked(it)) delta[it.mId] = (delta[it.mId] || 0) - (parseFloat(it.qty) || 0); });
+            } else if (newStatus === 'delivered') {
+                orderEditItems.forEach(it => { if (tracked(it)) delta[it.mId] = (delta[it.mId] || 0) - (parseFloat(it.qty) || 0); });
             }
+            for (const [mId, d] of Object.entries(delta)) {
+                const m = state.models.find(x => x.id === mId);
+                if (m && ((m.stock || 0) - d) < 0) return alert('Stok yetersiz: ' + m.name + ' (mevcut: ' + (m.stock || 0) + ').');
+            }
+            Object.entries(delta).forEach(([mId, d]) => {
+                const m = state.models.find(x => x.id === mId);
+                if (m) m.stock = (m.stock || 0) - d;
+            });
+            if (o.stockDeducted === false && newStatus === 'delivered') o.stockDeducted = true;
+
+            // Alanları güncelle
+            o.locId = $('m-ord-dealer').value;
+            o.status = newStatus;
+            o.type = $('m-ord-type').value;
+            o.invoiceNo = $('m-ord-inv').value.trim();
+            o.paymentStatus = $('m-ord-pay').value;
+            o.dueDate = $('m-ord-due').value || '';
+            if ($('m-ord-date').value) o.date = new Date($('m-ord-date').value + 'T12:00:00').toISOString();
+            if (o.status === 'delivered' && !o.deliveryDate) o.deliveryDate = new Date().toISOString();
+            if (o.status === 'pending') o.deliveryDate = '';
+            if (o.paymentStatus === 'paid' && !o.paidDate) o.paidDate = new Date().toISOString();
+            if (o.paymentStatus === 'pending') o.paidDate = '';
+
+            // Tutarları yeniden hesapla (birim fiyatlar KDV hariç matrah; kayıttaki matrah/KDV alanlarına yazılır)
+            o.items = orderEditItems.map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: parseFloat(it.unitPrice) || 0 }));
+            const baseMatrah = o.items.reduce((s, it) => s + (it.qty * it.unitPrice), 0);
+            const rate = (state?.settings?.kdvRate || 20) / 100;
+            o.matrah = baseMatrah;
+            o.kdv = o.type === 'faturalı' ? baseMatrah * rate : 0;
+            o.total = o.matrah + o.kdv;
+
             saveState(); renderAll(); closeModal('modal-order-edit');
         }
 
         loadFirebaseForm();
-
-        // --- Logo güvencesi: Logo.png yoksa sekme/bağlantı simgelerini yedek kopyaya yönlendir ---
-        (function ensureLogo() {
-            const FALLBACK_LOGO = 'https://cdn.abacus.ai/images/f2b6e7f4-15d7-48cf-9213-5396f1ef6839.png';
-            const test = new Image();
-            test.onerror = () => {
-                document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(l => { l.href = FALLBACK_LOGO; });
-            };
-            test.src = 'Logo.png';
-        })();
 
         // ====
         //  BAŞLAT
