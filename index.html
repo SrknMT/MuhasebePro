@@ -2,8 +2,21 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mete 3D Studio — ERP & Muhasebe</title>
+
+    <!-- iOS / iPadOS optimizasyonu: Ana ekrana eklendiğinde tam ekran uygulama gibi çalışır -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mete 3D ERP">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Logo: Sekme simgesi (favicon) + masaüstüne ekleme ikonu -->
+    <link rel="icon" type="image/png" href="Logo.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="Logo.png">
+    <link rel="apple-touch-icon" href="Logo.png">
+    <meta name="theme-color" content="#0f172a">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,7 +27,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://placehold.co/1200x800/e8e6e3/e8e6e3');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #1e293b; overflow: hidden; }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -31,15 +44,35 @@
         .stat-pulse { animation: pulse 2s infinite; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
         input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+
+        /* ---- Mobil / Dokunmatik (iPhone & iPad) optimizasyonları ---- */
+        * { -webkit-tap-highlight-color: transparent; }
+        html { touch-action: manipulation; }
+        .tab-content, aside nav, .overflow-y-auto, .overflow-x-auto, .overflow-auto { -webkit-overflow-scrolling: touch; }
+        @supports (height: 100dvh) { body { height: 100dvh; } }
+        @media (max-width: 1023px) {
+            /* iOS, odaklanılan input 16px'ten küçükse sayfayı otomatik zoom'lar; bunu engeller */
+            input, select, textarea { font-size: 16px !important; }
+        }
+        #mobile-header { padding-top: env(safe-area-inset-top); }
+        #sidebar { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+        @media (min-width: 1024px) {
+            #sidebar { padding-top: 0; padding-bottom: 0; }
+        }
+        .tab-content { padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)); }
     </style>
 </head>
 <body class="flex h-screen w-full">
 
     <!-- ==== SİDEBAR ==== -->
-    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 shadow-xl z-20">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 shadow-xl transform -translate-x-full transition-transform duration-200 lg:translate-x-0 lg:static lg:z-20">
         <div class="p-5 border-b border-slate-800 flex items-center gap-3">
-            <div class="bg-sky-500 text-white p-2 rounded-lg shadow-lg shadow-sky-500/30">
-                <i class="ph-fill ph-cube text-xl"></i>
+            <div class="relative w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                <img src="Logo.png" alt="Mete 3D Studio Logo" class="w-full h-full object-cover"
+                     onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='https://cdn.abacus.ai/images/f2b6e7f4-15d7-48cf-9213-5396f1ef6839.png';}else{this.style.display='none';document.getElementById('brand-fallback').classList.remove('hidden');document.getElementById('brand-fallback').classList.add('flex');}">
+                <div id="brand-fallback" class="absolute inset-0 hidden items-center justify-center bg-sky-500 text-white">
+                    <i class="ph-fill ph-cube text-xl"></i>
+                </div>
             </div>
             <div>
                 <h1 class="text-white font-bold text-lg leading-tight">Mete 3D Studio</h1>
@@ -84,7 +117,21 @@
         </div>
     </aside>
 
-    <main class="flex-1 relative overflow-hidden bg-slate-50">
+    <!-- Mobil menü karartması -->
+    <div id="sidebar-overlay" onclick="closeSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"></div>
+
+    <main class="flex-1 relative overflow-hidden bg-slate-50 w-full">
+
+        <!-- Mobil üst çubuk (iPhone / iPad dikey) -->
+        <div id="mobile-header" class="lg:hidden sticky top-0 z-20 bg-slate-900 text-white flex items-center gap-3 px-4 py-3 shadow-lg">
+            <button onclick="toggleSidebar()" class="p-2 -ml-2 rounded-lg hover:bg-slate-800 active:bg-slate-700" aria-label="Menü">
+                <i class="ph-bold ph-list text-2xl"></i>
+            </button>
+            <div class="flex items-center gap-2 min-w-0">
+                <img src="Logo.png" alt="" class="w-7 h-7 rounded object-cover flex-shrink-0" onerror="this.style.display='none'">
+                <span class="font-bold truncate">Mete 3D Studio</span>
+            </div>
+        </div>
 
         <!-- ==== TAB 0: DASHBOARD ==== -->
         <div id="tab-dashboard" class="tab-content flex flex-col h-full overflow-y-auto p-6">
@@ -228,6 +275,41 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Fire / Atık Kartı -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mt-6">
+                <div class="flex justify-between items-center mb-1 flex-wrap gap-2">
+                    <h3 class="text-lg font-semibold flex items-center gap-2 text-rose-700"><i class="ph-fill ph-trash-simple"></i> Fire / Atık Kaydı (Filament)</h3>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-semibold" id="ui-waste-avg-hint"></span>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Bozuk baskı, destek/raft kalan fil, tablada kalan malzeme gibi kayıpları burada işleyin. Fire yazıldığında stoktan gram düşülür, toplam maliyet sabit kalır; böylece ortalama gram fiyatı yükselir ve fire maliyeti gelecekteki üretimlerin maliyetine otomatik yansır ("normal fire maliyete dahildir").</p>
+                <form onsubmit="addWaste(event)" class="flex gap-3 items-end flex-wrap">
+                    <div class="w-28">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Gram</label>
+                    <input type="number" id="inp-waste-gr" required min="1" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-rose-500 outline-none">
+                    </div>
+                    <div class="w-44">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Sebep</label>
+                    <select id="inp-waste-reason" class="w-full border border-slate-300 rounded p-2 text-sm outline-none">
+                    <option>Bozuk Baskı</option>
+                    <option>Destek / Raft</option>
+                    <option>Tablada Kalan</option>
+                    <option>Test Baskısı</option>
+                    <option>Diğer</option>
+                    </select>
+                    </div>
+                    <div class="flex-1 min-w-[160px]">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Not (opsiyonel)</label>
+                    <input type="text" id="inp-waste-note" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-rose-500">
+                    </div>
+                    <div class="w-36">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tarih</label>
+                    <input type="date" id="inp-waste-date" class="w-full border border-slate-300 rounded p-2 text-sm outline-none">
+                    </div>
+                    <button type="submit" class="bg-rose-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-rose-700 transition">Fire Yaz</button>
+                </form>
+                <div id="ui-waste-recent" class="mt-4 space-y-1 max-h-40 overflow-y-auto"></div>
+            </div>
         </div>
 
         <!-- ==== TAB 2: ÜRÜNLER & FİYATLAMA ==== -->
@@ -235,10 +317,13 @@
             <div class="flex justify-between items-end mb-6 flex-wrap gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800">Ürün Kataloğu ve Fiyatlama</h2>
-                    <p class="text-sm text-slate-500">Akıllı Fiyatlandırma Motoru; malzeme, sabit gider, vergi ve hedef kârı birlikte hesaplar.</p>
+                    <p class="text-sm text-slate-500">Ürettiğiniz ürünler ile dışarıdan aldığınız hazır ürünler aynı katalogda; türüne göre stok ve maliyet yönetimi yapılır.</p>
                 </div>
-                <div class="flex gap-2 items-center">
-                    <input type="text" id="inp-prod-search" placeholder="Ürün ara..." oninput="renderProducts()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-48 outline-none focus:border-sky-500">
+                <div class="flex gap-2 items-center flex-wrap">
+                    <select id="inp-prod-cat-filter" onchange="renderProducts()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500 w-44">
+                        <option value="">Tüm Kategoriler</option>
+                    </select>
+                    <input type="text" id="inp-prod-search" placeholder="Ürün ara..." oninput="renderProducts()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-44 outline-none focus:border-sky-500">
                     <button onclick="openProductModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm flex items-center gap-2">
                     <i class="ph-bold ph-plus"></i> Yeni Ürün Ekle
                     </button>
@@ -343,7 +428,7 @@
                 <!-- Manuel Gider -->
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex justify-between mb-4 items-center">
-                    <h3 class="font-bold text-slate-800">Manuel Gider İşlem (Kasa Çıkışı)</h3>
+                    <h3 class="font-bold text-slate-800">Manuel Gider İşle (Kasa Çıkışı)</h3>
                     </div>
                     <form onsubmit="addManualExpense(event)" class="flex gap-4 items-end flex-wrap">
                     <div class="flex-1 min-w-[200px]">
@@ -379,8 +464,15 @@
         <!-- ==== TAB 6: MUHASEBE & VERGİ ==== -->
         <div id="tab-accounting" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
             <div class="max-w-7xl mx-auto w-full">
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">Resmi Muhasebe & Vergi (<span id="acc-year">2026</span>)</h2>
-                <p class="text-sm text-slate-500 mb-6">Yasal matrahınız, KDV durumunuz ve demirbaş amortismanlarınız. Tüm hesaplar tahminidir; kesin rakamlar için mali müşavirinize danışın.</p>
+                <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
+                    <h2 class="text-2xl font-bold text-slate-800">Resmi Muhasebe & Vergi</h2>
+                    <div class="flex items-center bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                        <button onclick="changeYear(-1)" class="px-3.5 py-2 text-slate-500 hover:bg-slate-100 active:bg-slate-200 font-bold" title="Önceki yıl"><i class="ph-bold ph-caret-left"></i></button>
+                        <span class="px-3 font-bold text-slate-800 tabular-nums" id="acc-year">2026</span>
+                        <button onclick="changeYear(1)" class="px-3.5 py-2 text-slate-500 hover:bg-slate-100 active:bg-slate-200 font-bold" title="Sonraki yıl"><i class="ph-bold ph-caret-right"></i></button>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 mb-6">Yasal matrahınız, KDV durumunuz ve demirbaş amortismanlarınız. Yıl seçicisiyle geçmiş/ilerideki yıllara bakabilirsiniz (örn. 2026 yılının beyanname rakamları için 2026'yı seçin — vergi takvimi ve dönem rakamları seçilen yıla göre hesaplanır). Tüm hesaplar tahminidir; kesin rakamlar için mali müşavirinize danışın.</p>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -409,7 +501,7 @@
                     <div class="flex justify-between border-t border-slate-200 pt-2 mt-2"><span>Ödenecek KDV:</span><b class="text-rose-700 text-sm" id="ui-kdv-odenecek">0 ₺</b></div>
                     <div class="flex justify-between"><span>Devreden KDV:</span><b class="text-emerald-700" id="ui-kdv-devreden">0 ₺</b></div>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-4 bg-slate-50 p-2 rounded">Faturalı satışlarınızın KDV'si "Ödenecek KDV" havuzuna, faturalı alımlarınızın KDV'si ise mahsuplaşma için "KDV Giren"e işlenir.</p>
+                    <p class="text-[11px] text-slate-400 mt-4 bg-slate-50 p-2 rounded">Faturalı satışlarınızın KDV'si "Ödenecek KDV" havuzuna, faturalı alımlarınızın KDV'si ise mahsuplaşma için "KDV Giren"e işlenir. Hazır ürün alımlarınız da faturalı işaretlerse buraya dahil olur.</p>
                     </div>
 
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-1 flex flex-col">
@@ -472,12 +564,18 @@
             <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800">Raporlar</h2>
-                    <p class="text-sm text-slate-500">Aylık kâr/zarar, bayi performansı ve ürün analizi. CSV olarak dışa aktarabilirsiniz.</p>
+                    <p class="text-sm text-slate-500">Aylık kâr/zarar, bayi performansı, ürün ve kategori analizi. CSV olarak dışa aktarabilirsiniz.</p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex items-center bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                    <button onclick="changeYear(-1)" class="px-3.5 py-2 text-slate-500 hover:bg-slate-100 active:bg-slate-200 font-bold" title="Önceki yıl"><i class="ph-bold ph-caret-left"></i></button>
+                    <span class="px-3 font-bold text-slate-800 tabular-nums" id="rep-year">2026</span>
+                    <button onclick="changeYear(1)" class="px-3.5 py-2 text-slate-500 hover:bg-slate-100 active:bg-slate-200 font-bold" title="Sonraki yıl"><i class="ph-bold ph-caret-right"></i></button>
+                </div>
+                <div class="flex gap-2 flex-wrap">
                     <button onclick="exportMonthlyCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Aylık Rapor CSV</button>
                     <button onclick="exportDealerCSV()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Bayi Raporu CSV</button>
                     <button onclick="exportProductCSV()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Ürün Raporu CSV</button>
+                    <button onclick="exportGiftCSV()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Hediye Raporu CSV</button>
                 </div>
             </div>
 
@@ -531,6 +629,83 @@
                     </table>
                     </div>
                 </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 xl:col-span-2">
+                    <h3 class="font-bold text-slate-800 mb-4">Kategori Bazlı Satış</h3>
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-600 font-semibold">
+                    <tr>
+                    <th class="p-2">Kategori</th>
+                    <th class="p-2 text-center">Satılan</th>
+                    <th class="p-2 text-right">Ciro (₺)</th>
+                    <th class="p-2 text-right">Tahmini Kâr (₺)</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ui-category-report" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fire Özeti -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mt-6">
+                <h3 class="font-bold text-slate-800 mb-1 flex items-center gap-2"><i class="ph-fill ph-trash-simple text-rose-500"></i> Fire Özeti (Filament)</h3>
+                <p class="text-xs text-slate-500 mb-4">Fire stoktan düşülür ama toplam maliyet sabit kalır; ortalama gram maliyeti yükselir ve fire, gelecekteki üretimlerin maliyetine otomatik yansır. Parasal karşılıklar, fire yazıldığı andaki ortalama gram fiyatıyla hesaplanır; vergi hesaplarına ayrıca eklenmez (normal fire maliyete dahildir).</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-rose-50 border border-rose-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-rose-700 uppercase">Bu Ay Fire</p>
+                    <p class="text-xl font-bold text-rose-800 mt-1" id="ui-waste-month-gr">0 gr</p>
+                    <p class="text-xs text-rose-600" id="ui-waste-month-val">0 ₺</p>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-amber-700 uppercase">Bu Yıl Fire</p>
+                    <p class="text-xl font-bold text-amber-800 mt-1" id="ui-waste-year-gr">0 gr</p>
+                    <p class="text-xs text-amber-600" id="ui-waste-year-val">0 ₺</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-slate-600 uppercase">Toplam Fire (Tüm Zamanlar)</p>
+                    <p class="text-xl font-bold text-slate-800 mt-1" id="ui-waste-all-gr">0 gr</p>
+                    <p class="text-xs text-slate-500" id="ui-waste-all-val">0 ₺</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-600 font-semibold">
+                    <tr>
+                    <th class="p-2">Sebep</th>
+                    <th class="p-2 text-center">Kayıt</th>
+                    <th class="p-2 text-right">Gram</th>
+                    <th class="p-2 text-right">Parasal Karşılık (₺)</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ui-waste-reasons" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Hediye Tablosu -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mt-6">
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-gift text-purple-500"></i> Hediye Verilen Ürünler</h3>
+                    <button onclick="exportGiftCSV()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Hediye Raporu CSV</button>
+                </div>
+                <p class="text-xs text-slate-500 mb-3">POS'ta "Hediye Fişi Ver" ile kaydedilen dağıtımlar. Ciro ve KDV'ye yansımaz; stok düşülür, maliyet değeri bilgi amaçlı izlenir. Tanıtım hediyelerinin gider yazılabilirliği için mali müşavirinize danışın.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-600 font-semibold">
+                    <tr>
+                    <th class="p-2">Tarih</th>
+                    <th class="p-2">Verilen Kişi / Kurum</th>
+                    <th class="p-2">Ürünler</th>
+                    <th class="p-2 text-center">Adet</th>
+                    <th class="p-2 text-right">Maliyet Değeri (₺)</th>
+                    <th class="p-2">Not</th>
+                    <th class="p-2 text-center">İşlem</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ui-gift-report" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -558,7 +733,7 @@
                     </div>
                     <button onclick="saveFirebaseConfig()" class="mt-4 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded font-semibold text-sm w-full">Kaydet ve Yeniden Bağlan</button>
                     <div class="mt-3 bg-amber-50 border border-amber-200 rounded p-3 text-[11px] text-amber-800">
-                    <b>Güvenlik notu:</b> Bu uygulama kullanıcı girişi (Authentication) kullanmaz. Bu yüzden <code>request.auth != null</code> kuralı işe yaramaz ve veriye erişimi tamamen keser. Firestore kurallarınızı test modunda bırakın: <code class="block mt-1 bg-white p-1 rounded">allow read, write: if true;</code> Bu durumda bağlantıyı bilen herkes veriye erişebilir; bu yüzden verilerinizi düzenli olarak JSON yedekle ile saklayın ve Firebase config'inizi kimseyle paylaşmayın.
+                    <b>Güvenlik notu:</b> Bu dosyayı GitHub'a yüklerken Firebase config'iniz görünür olur — bu normaldir. Önemli olan Firestore kurallarınızın yalnızca size açık olmasıdır. Örnek kural: <code class="block mt-1 bg-white p-1 rounded">rules_version = '2'; service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if request.auth != null; } } }</code>
                     </div>
                     </div>
 
@@ -571,7 +746,7 @@
                     <div><label class="text-xs font-semibold text-slate-600">Düşük Filament Uyarısı (gr)</label><input type="number" id="set-low-fil" class="w-full border rounded p-2 text-sm mt-1"></div>
                     <div><label class="text-xs font-semibold text-slate-600">Düşük Aksesuar Uyarısı (adet)</label><input type="number" id="set-low-acc" class="w-full border rounded p-2 text-sm mt-1"></div>
                     </div>
-                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2">Gelir Vergisi Dilimleri (Ticari Kazanç — üst sınırlar artan sırada)</h4>
+                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2">Gelir Vergisi Dilimleri (2026 — Ticari Kazanç)</h4>
                     <div class="space-y-2 text-sm" id="brackets-editor">
                     <!-- JS Injected -->
                     </div>
@@ -640,39 +815,65 @@
                 <input type="hidden" id="m-prod-id">
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div><label class="block text-xs font-semibold mb-1">Ürün Adı</label><input type="text" id="m-prod-name" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Ürün Kategorisi</label>
+                    <select id="m-prod-category" class="w-full border rounded p-2 text-sm bg-white"></select>
+                    </div>
+                    <div><label class="block text-xs font-semibold mb-1">Ürün Türü</label>
+                    <select id="m-prod-type" onchange="onProductTypeChange()" class="w-full border rounded p-2 text-sm bg-white">
+                    <option value="uretilen">Kendi Ürettiğim Ürün</option>
+                    <option value="hazir">Dışarıdan Aldığım (Hazır) Ürün</option>
+                    <option value="hizmet">Hizmet / Stoksuz Satış</option>
+                    </select>
+                    </div>
+                    <div id="m-prod-cost-wrap" class="hidden"><label class="block text-xs font-semibold mb-1">Birim Alış Maliyeti (₺)</label><input type="number" step="0.01" min="0" id="m-prod-cost" class="w-full border rounded p-2 text-sm" placeholder="Örn: 65"></div>
+                </div>
+
+                <div id="m-prod-produced-wrap">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
                     <div><label class="block text-xs font-semibold mb-1">Baskı Filament (Gram)</label><input type="number" id="m-prod-fil" min="0" class="w-full border rounded p-2 text-sm"></div>
+                    </div>
+
+                    <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-6">
+                        <label class="block text-xs font-semibold text-purple-800 mb-2">Reçete: Kullanılan Aksesuarlar</label>
+                        <div id="m-prod-recipe" class="space-y-2 mb-2"></div>
+                        <div class="flex gap-2">
+                        <select id="m-prod-acc-sel" class="flex-1 border rounded p-2 text-sm"></select>
+                        <input type="number" id="m-prod-acc-qty" placeholder="Adet" min="1" class="w-20 border rounded p-2 text-sm">
+                        <button onclick="addRecipeItem()" class="bg-purple-600 text-white px-3 py-1 rounded text-sm">Ekle</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-sky-50 p-4 rounded-lg border border-sky-100 flex flex-col">
+                        <div class="flex justify-between items-center mb-2 border-b border-sky-200 pb-2">
+                        <span class="text-sm font-bold text-sky-800">Akıllı Fiyatlandırma Motoru (Tersine Hesaplama)</span>
+                        <button onclick="calcSmartPrice()" class="bg-sky-600 text-white px-3 py-1 rounded text-xs font-semibold shadow-sm">Hesapla</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                        <label class="block text-xs font-semibold text-slate-600">Hedef Net Kâr Marjı (%)</label>
+                        <input type="number" id="m-prod-target" min="1" max="90" class="w-full border rounded p-1.5 text-sm mt-0.5">
+                        </div>
+                        <div class="flex items-end pb-1">
+                        <span class="text-[11px] text-slate-500">Varsayılan: Ayarlar'daki hedef kâr</span>
+                        </div>
+                        </div>
+                        <div id="m-prod-smart-info" class="text-xs text-slate-600 space-y-1 mb-3">
+                        Hesapla butonuna basarak birim maliyet + sabit gider payı + vergi yükü ile hedef kârınızı karşılayan satış fiyatını görün.
+                        </div>
+                        <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Karar Verilen KDV Dahil Satış Fiyatı (₺)</label>
+                        <input type="number" id="m-prod-price" class="w-full border-2 border-emerald-400 bg-white rounded p-2 text-lg font-bold text-center">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-6">
-                    <label class="block text-xs font-semibold text-purple-800 mb-2">Reçete: Kullanılan Aksesuarlar</label>
-                    <div id="m-prod-recipe" class="space-y-2 mb-2"></div>
-                    <div class="flex gap-2">
-                    <select id="m-prod-acc-sel" class="flex-1 border rounded p-2 text-sm"></select>
-                    <input type="number" id="m-prod-acc-qty" placeholder="Adet" min="1" class="w-20 border rounded p-2 text-sm">
-                    <button onclick="addRecipeItem()" class="bg-purple-600 text-white px-3 py-1 rounded text-sm">Ekle</button>
-                    </div>
-                </div>
-
-                <div class="bg-sky-50 p-4 rounded-lg border border-sky-100 flex flex-col">
-                    <div class="flex justify-between items-center mb-2 border-b border-sky-200 pb-2">
-                    <span class="text-sm font-bold text-sky-800">Akıllı Fiyatlandırma Motoru (Tersine Hesaplama)</span>
-                    <button onclick="calcSmartPrice()" class="bg-sky-600 text-white px-3 py-1 rounded text-xs font-semibold shadow-sm">Hesapla</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mb-3">
-                    <div>
-                    <label class="block text-xs font-semibold text-slate-600">Hedef Net Kâr Marjı (%)</label>
-                    <input type="number" id="m-prod-target" min="1" max="90" class="w-full border rounded p-1.5 text-sm mt-0.5">
-                    </div>
-                    <div class="flex items-end pb-1">
-                    <span class="text-[11px] text-slate-500">Varsayılan: Ayarlar'daki hedef kâr</span>
-                    </div>
-                    </div>
-                    <div id="m-prod-smart-info" class="text-xs text-slate-600 space-y-1 mb-3">
-                    Hesapla butonuna basarak birim maliyet + sabit gider payı + vergi yükü ile hedef kârınızı karşılayan satış fiyatını görün.
-                    </div>
-                    <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Karar Verilen KDV Dahil Satış Fiyatı (₺)</label>
-                    <input type="number" id="m-prod-price" class="w-full border-2 border-emerald-400 bg-white rounded p-2 text-lg font-bold text-center">
+                <div id="m-prod-simple-wrap" class="hidden">
+                    <div class="bg-sky-50 p-4 rounded-lg border border-sky-100">
+                        <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">KDV Dahil Satış Fiyatı (₺)</label>
+                        <input type="number" id="m-prod-price-simple" class="w-full border-2 border-emerald-400 bg-white rounded p-2 text-lg font-bold text-center" oninput="document.getElementById('m-prod-price').value=this.value">
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-2">Hazır ürün ve hizmetlerde filament/reçete yerine alış maliyeti kullanılır. Satışta yalnızca ürün stoğu düşer.</p>
                     </div>
                 </div>
             </div>
@@ -747,15 +948,19 @@
             <div class="flex-1 flex overflow-hidden">
                 <div class="w-1/2 border-r flex flex-col p-4 bg-slate-50">
                     <label class="text-xs font-bold text-slate-500 mb-1">Müşteri / Bayi Seçimi</label>
-                    <select id="pos-dealer" class="w-full border rounded p-2 text-sm mb-4 bg-white"></select>
+                    <select id="pos-dealer" class="w-full border rounded p-2 text-sm mb-3 bg-white"></select>
 
-                    <label class="text-xs font-bold text-slate-500 mb-1">Ürün Kataloğu <span class="font-normal text-slate-400">(stok durumuyla — adet yazarak veya +/− ile ekleyin)</span></label>
+                    <label class="text-xs font-bold text-slate-500 mb-1">Kategori Filtresi</label>
+                    <select id="pos-cat-filter" onchange="renderPosProducts()" class="w-full border rounded p-2 text-xs mb-2 bg-white">
+                        <option value="">Tüm Kategoriler</option>
+                    </select>
+
+                    <label class="text-xs font-bold text-slate-500 mb-1">Ürün Kataloğu <span class="font-normal text-slate-400">(stok durumuyla)</span></label>
                     <div id="pos-products" class="flex-1 overflow-y-auto space-y-2"></div>
                 </div>
                 <div class="w-1/2 flex flex-col p-4">
-                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2 flex items-center gap-2">
-                    <span>Sepet İçeriği</span>
-                    <span id="pos-cart-count" class="text-[11px] font-bold bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full">0 adet</span>
+                    <h4 class="font-bold text-sm text-slate-700 mb-2 border-b pb-2 flex items-center gap-2">Sepet İçeriği
+                    <span id="pos-cart-count" class="text-[10px] font-bold bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full">0 adet</span>
                     </h4>
                     <div id="pos-cart" class="flex-1 overflow-y-auto space-y-2 mb-4"></div>
                     <div class="bg-slate-100 p-4 rounded-lg border border-slate-200">
@@ -763,9 +968,41 @@
                     <span>Toplam Tutar:</span>
                     <span id="pos-total">0.00 ₺</span>
                     </div>
+                    <div class="flex gap-2">
+                    <button onclick="openGiftModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-bold">Hediye Fişi Ver</button>
                     <button onclick="submitPosOrder()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold shadow-md">Siparişi Üretime Al</button>
                     </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MODAL: HEDİYE FİŞİ ==== -->
+    <div id="modal-gift" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
+            <div class="p-4 border-b bg-purple-50 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-purple-900 flex items-center gap-2"><i class="ph-fill ph-gift"></i> Hediye Fişi</h3>
+                <button onclick="closeModal('modal-gift')" class="text-slate-400 hover:text-rose-500"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-5">
+                <p class="text-xs font-bold text-slate-600 mb-2">Sepetteki Ürünler</p>
+                <div id="gift-cart-summary" class="border border-slate-200 rounded-lg p-3 bg-slate-50 mb-4 max-h-40 overflow-y-auto"></div>
+                <div class="mb-3">
+                    <label class="block text-xs font-semibold mb-1">Kime Verildi (Kişi / Kurum)</label>
+                    <input type="text" id="m-gift-to" class="w-full border rounded p-2 text-sm" placeholder="Örn: Ahmet Bey, Fuar tanıtımı, Trendyol kampanyası">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-semibold mb-1">Not (opsiyonel)</label>
+                    <input type="text" id="m-gift-note" class="w-full border rounded p-2 text-sm" placeholder="Örn: Müşteri jesti, reklam amaçlı">
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded p-3 text-[11px] text-amber-800">
+                    Stok düşülür (üretilen ürünlerde filament ve reçete aksesuarları dahil) ancak bu işlem <b>ciroya, KDV'ye ve sipariş listesine yazılmaz</b>. Kayıt, Raporlar sekmesindeki "Hediye Verilen Ürünler" bölümünde izlenir.
+                </div>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex justify-end rounded-b-xl">
+                <button onclick="closeModal('modal-gift')" class="px-4 py-2 rounded font-semibold text-sm text-slate-500 hover:bg-slate-200 mr-2">İptal</button>
+                <button onclick="submitGiftOrder()" class="bg-purple-600 text-white px-6 py-2 rounded font-semibold text-sm hover:bg-purple-700">Hediyeyi Kaydet</button>
             </div>
         </div>
     </div>
@@ -781,7 +1018,7 @@
                 <input type="hidden" id="m-acc-stock-id">
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="block text-xs font-semibold mb-1">Adet</label><input id="m-acc-stock-qty" type="number" min="1" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Toplam Tutar (₺)</label><input id="m-acc-stock-unit" type="number" step="0.01" min="0" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Birim Fiyat (₺)</label><input id="m-acc-stock-unit" type="number" step="0.01" min="0" class="w-full border rounded p-2 text-sm"></div>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" id="m-acc-stock-fat" class="w-4 h-4 accent-emerald-600">
@@ -800,15 +1037,27 @@
     <div id="modal-product-stock" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
             <div class="p-4 border-b bg-emerald-50 flex justify-between items-center rounded-t-xl">
-                <h3 class="font-bold text-emerald-900">Ürüne Stok Ekle (Üretim)</h3>
+                <h3 class="font-bold text-emerald-900">Ürüne Stok Ekle</h3>
                 <button onclick="closeModal('modal-product-stock')" class="text-slate-400 hover:text-rose-500"><i class="ph-bold ph-x text-xl"></i></button>
             </div>
             <div class="p-4 space-y-3">
                 <input type="hidden" id="m-prd-stock-id">
+                <p class="text-[11px] font-semibold text-slate-500" id="m-prd-stock-title-hint"></p>
                 <div><label class="block text-xs font-semibold mb-1">Adet</label><input id="m-prd-stock-qty" type="number" min="1" class="w-full border rounded p-2 text-sm"></div>
+                <div id="m-prd-cost-section" class="hidden space-y-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Birim Alış Fiyatı (₺)</label><input id="m-prd-stock-unit" type="number" step="0.01" min="0" class="w-full border rounded p-2 text-sm"></div>
+                    <div class="flex items-end pb-1">
+                    <div class="flex items-center gap-2">
+                    <input type="checkbox" id="m-prd-stock-fat" class="w-4 h-4 accent-emerald-600">
+                    <label for="m-prd-stock-fat" class="text-xs font-semibold text-slate-600 cursor-pointer">Faturalı Alım</label>
+                    </div>
+                    </div>
+                    </div>
+                    <p class="text-[11px] text-amber-700">Bu giriş, alış maliyeti olarak gider işlenir; faturalı seçerseniz giren KDV havuzuna da eklenir.</p>
+                </div>
                 <div><label class="block text-xs font-semibold mb-1">Tarih</label><input id="m-prd-stock-date" type="date" class="w-full border rounded p-2 text-sm"></div>
                 <div><label class="block text-xs font-semibold mb-1">Not</label><input id="m-prd-stock-note" type="text" class="w-full border rounded p-2 text-sm" placeholder="Opsiyonel not"></div>
-                <p class="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded p-2">Üretim sırasında reçetedeki filament ve aksesuarlar stoktan düşülür.</p>
             </div>
             <div class="p-4 border-t bg-slate-50 flex justify-end rounded-b-xl">
                 <button onclick="saveProductStock()" class="bg-emerald-600 text-white px-6 py-2 rounded font-semibold text-sm">Kaydet</button>
@@ -911,8 +1160,7 @@
         // ====
         //  METE 3D STUDIO — ERP & MUHASEBE PRO
         //  Tek dosyalık çözüm: Firebase Firestore + localStorage yedek
-        //  Düzeltilmiş tek sürüm (yinelenen fonksiyonlar kaldırıldı)
-        //  POS: adet girişi (− / kutu / +) + sepet toplam adet göstergesi
+        //  v6: Ürün kategorileri + ürün türleri (Üretilen / Hazır Ürün / Hizmet)
         // ====
 
         // --- Varsayılan Firebase Config (Ayarlar'dan değiştirilebilir) ---
@@ -940,27 +1188,23 @@
         let orderEditItems = [];
 
         const MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+        const PRODUCT_CATEGORIES = ["Anahtarlık","Aksesuar","Dekor","Tekstil","Bardak / Kupa","Hediyelik Eşya","Diğer"];
+        const PTYPE_LABELS = { uretilen: 'Üretim', hazir: 'Hazır Ürün', hizmet: 'Hizmet' };
 
         // --- Yardımcılar ---
         const $ = id => document.getElementById(id);
         const fmt = num => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(num || 0);
         const fmtN = num => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(num || 0);
-        const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const esc = s => String(s == null ? '' : s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
         const todayStr = () => new Date().toISOString().slice(0,10);
 
-        // KDV dahil tutarı matrah + KDV olarak böler
+        // --- KDV yardımcısı: KDV dahil tutarı matrah + KDV olarak böler ---
         function kdvBreakdown(totalIncl) {
             const rate = (state?.settings?.kdvRate || 20) / 100;
             const gross = parseFloat(totalIncl) || 0;
             const matrah = gross / (1 + rate);
             const kdv = gross - matrah;
             return { gross, matrah, kdv };
-        }
-
-        // Vergi dilimlerini üst sınır artan sırada düzenler (null = sonsuz, en sona)
-        function sortBrackets(br) {
-            if (!Array.isArray(br)) return br;
-            return br.sort((a, b) => (a.limit === null ? Infinity : a.limit) - (b.limit === null ? Infinity : b.limit));
         }
 
         // --- Varsayılan Durum ---
@@ -972,6 +1216,8 @@
                 accessoryLogs: [],
                 models: [],
                 productStockLogs: [],
+                wasteLogs: [],
+                giftLogs: [],
                 dealers: [],
                 orders: [],
                 transactions: [],
@@ -979,13 +1225,12 @@
                 settings: {
                     musavir: 4500, kdvDamga: 791, muhtasarDamga: 791, geciciDamga: 791,
                     kdvRate: 20, targetProfit: 30, lowFilament: 500, lowAccessory: 5,
-                    // NOT: Bu varsayılan dilimler örnekidir; güncel resmi tutarları Ayarlar'dan kontrol edin.
                     brackets: [
-                        { limit: 10000, rate: 15 },
-                        { limit: 40000, rate: 20 },
-                        { limit: 190000, rate: 27 },
-                        { limit: 530000, rate: 35 },
-                        { limit: null, rate: 40 }
+                    { limit: 190000, rate: 15 },
+                    { limit: 40000, rate: 20 },
+                    { limit: 10000, rate: 27 },
+                    { limit: 530000, rate: 35 },
+                    { limit: null, rate: 40 }
                     ]
                 }
             };
@@ -997,12 +1242,11 @@
             const s = raw && typeof raw === 'object' ? raw : {};
             const st = { ...def, ...s };
             st.filament = { totalGr: 0, totalCost: 0, ...(s.filament || {}) };
-            ['filamentLogs','accessories','accessoryLogs','models','productStockLogs','dealers','orders','transactions','assets'].forEach(k => {
+            ['filamentLogs','accessories','accessoryLogs','models','productStockLogs','wasteLogs','giftLogs','dealers','orders','transactions','assets'].forEach(k => {
                 if (!Array.isArray(st[k])) st[k] = [];
             });
             st.settings = { ...def.settings, ...(s.settings || {}) };
             if (!Array.isArray(st.settings.brackets) || !st.settings.brackets.length) st.settings.brackets = def.settings.brackets;
-            st.settings.brackets = sortBrackets(st.settings.brackets);
 
             st.filamentLogs.forEach(l => {
                 if (l.faturali === undefined) l.faturali = false;
@@ -1029,13 +1273,26 @@
                 l.kdv = l.faturali ? br.kdv : 0;
             });
 
+            // Ürünler: tür + kategori alanlarını ekle (eski kayıtlar "Üretim" olarak varsayılanlanır)
             st.models.forEach(m => {
                 if (m.stock === undefined || isNaN(m.stock)) m.stock = 0;
+                if (!m.ptype) m.ptype = 'uretilen';
+                if (!m.category) m.category = 'Diğer';
+                if (m.costPrice === undefined || isNaN(m.costPrice)) m.costPrice = 0;
+                if (!Array.isArray(m.recipe)) m.recipe = [];
             });
 
+            // Ürün stok kayıtları: hazır ürün alışları maliyet alanları taşır
             st.productStockLogs.forEach(l => {
                 l.date = l.date || new Date().toISOString();
                 l.note = l.note || '';
+                if (l.unitCost !== undefined && l.unitCost !== null) {
+                    if (l.total === undefined || l.total === null) l.total = (l.qty || 0) * l.unitCost;
+                    if (l.faturali === undefined) l.faturali = false;
+                    const br = kdvBreakdown(l.total || 0);
+                    l.matrah = l.faturali ? br.matrah : (l.total || 0);
+                    l.kdv = l.faturali ? br.kdv : 0;
+                }
             });
 
             st.dealers.forEach(d => {
@@ -1056,16 +1313,12 @@
                 if (o.deliveryDate === undefined) o.deliveryDate = '';
                 if (o.stockDeducted === undefined) o.stockDeducted = true;
                 if (o.status === 'pending' && o.type === undefined) o.type = '';
-                const total = (o.items || []).reduce((s, it) => s + ((it.qty || 0) * (it.unitPrice || 0)), 0);
+                const total = (o.items || []).reduce((s,it)=> s + ((it.qty||0) * (it.unitPrice||0)), 0);
                 if (!(o.total >= 0)) o.total = total;
-                // KDV yalnızca faturalı siparişlerde ayrıştırılır (faturasız/bekleyen siparişte KDV 0'dır)
-                if (o.type === 'faturalı') {
+                if (o.matrah === undefined || o.kdv === undefined) {
                     const br = kdvBreakdown(o.total || 0);
                     o.matrah = br.matrah;
                     o.kdv = br.kdv;
-                } else {
-                    o.matrah = o.total || 0;
-                    o.kdv = 0;
                 }
             });
 
@@ -1081,6 +1334,7 @@
 
         function setSync(status) {
             const el = $('sync-status');
+            if (!el) return;
             if (status === 'ok') { el.innerHTML = '<i class="ph-fill ph-cloud-check text-sm"></i> Eşitlendi'; el.className = 'flex items-center gap-2 text-emerald-600 bg-emerald-50 p-2 rounded'; }
             else if (status === 'saving') { el.innerHTML = '<i class="ph ph-spinner-gap animate-spin text-sm"></i> Kaydediliyor...'; el.className = 'flex items-center gap-2 text-amber-600 bg-amber-50 p-2 rounded'; }
             else { el.innerHTML = '<i class="ph-bold ph-warning text-sm"></i> Çevrimdışı (yerel yedek aktif)'; el.className = 'flex items-center gap-2 text-rose-600 bg-rose-50 p-2 rounded'; }
@@ -1110,15 +1364,15 @@
                 dbRef = firebase.firestore().collection(cfg.collection || 'ERP_Data').doc(cfg.doc || 'Main_Database_V51');
                 dbRef.onSnapshot(doc => {
                     if (doc.exists) {
-                        state = normalizeState(doc.data());
-                        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
-                        setSync('ok');
-                        renderAll();
+                    state = normalizeState(doc.data());
+                    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+                    setSync('ok');
+                    renderAll();
                     } else {
-                        const local = localStorage.getItem(LS_KEY);
-                        if (local) { state = normalizeState(JSON.parse(local)); saveState(); }
-                        else { state = normalizeState(null); saveState(); }
-                        renderAll();
+                    const local = localStorage.getItem(LS_KEY);
+                    if (local) { state = normalizeState(JSON.parse(local)); saveState(); }
+                    else { state = normalizeState(null); saveState(); }
+                    renderAll();
                     }
                 }, err => { setSync('off'); loadLocalFallback(); });
             } catch (e) { setSync('off'); loadLocalFallback(); }
@@ -1137,10 +1391,28 @@
             const btn = $('btn-' + tabId);
             btn.classList.add('bg-sky-600', 'text-white');
             btn.classList.remove('hover:bg-slate-800');
+            closeSidebar();
         }
 
         function openModal(id) { $(id).classList.replace('hidden', 'flex'); }
         function closeModal(id) { $(id).classList.replace('flex', 'hidden'); }
+
+        // --- Mobil kenar menüsü (iPhone / iPad) ---
+        function openSidebar() {
+            $('sidebar').classList.remove('-translate-x-full');
+            $('sidebar-overlay').classList.remove('hidden');
+        }
+        function closeSidebar() {
+            $('sidebar').classList.add('-translate-x-full');
+            $('sidebar-overlay').classList.add('hidden');
+        }
+        function toggleSidebar() {
+            const sb = $('sidebar');
+            if (sb.classList.contains('-translate-x-full')) openSidebar(); else closeSidebar();
+        }
+
+        // --- Yıl seçici (Muhasebe & Vergi, Raporlar) ---
+        function changeYear(delta) { currentYear += delta; renderAll(); }
 
         // --- Onay Modalı (confirm yerine) ---
         function askConfirm(msg, fn) {
@@ -1182,7 +1454,7 @@
             const br = kdvBreakdown(price);
             const id = 'ACC' + Date.now();
             state.accessories.push({ id, name, qty, totalCost: price });
-            state.accessoryLogs.push({ id: 'AL' + Date.now(), accId: id, name, qty, unitPrice: qty > 0 ? price / qty : 0, total: price, price, faturali, matrah: faturali ? br.matrah : price, kdv: faturali ? br.kdv : 0, date: new Date().toISOString(), note: 'İlk stok' });
+            state.accessoryLogs.push({ id: 'AL' + Date.now(), accId: id, name, qty, unitPrice: qty>0?price/qty:0, total: price, price, faturali, matrah: faturali ? br.matrah : price, kdv: faturali ? br.kdv : 0, date: new Date().toISOString(), note: 'İlk stok' });
             saveState(); renderAll(); closeModal('modal-accessory');
         }
 
@@ -1202,7 +1474,7 @@
             if (!acc) return alert('Aksesuar bulunamadı.');
 
             const qty = parseInt($('m-acc-stock-qty').value);
-            const total = parseFloat($('m-acc-stock-unit').value); // Toplam tutar
+            const total = parseFloat($('m-acc-stock-unit').value);
             const faturali = $('m-acc-stock-fat').checked;
             const dateVal = $('m-acc-stock-date').value || todayStr();
             const note = $('m-acc-stock-note').value.trim();
@@ -1230,9 +1502,18 @@
             currentRecipe = [];
             $('m-prod-id').value = '';
             $('m-prod-title').innerText = 'Yeni Ürün Ekle';
-            $('m-prod-name').value = ''; $('m-prod-fil').value = ''; $('m-prod-price').value = '';
+            $('m-prod-name').value = ''; $('m-prod-fil').value = ''; $('m-prod-price').value = ''; $('m-prod-price-simple').value = '';
             $('m-prod-target').value = state.settings.targetProfit || 30;
             $('m-prod-smart-info').innerHTML = 'Hesapla butonuna basarak birim maliyet + sabit gider payı + vergi yükü ile hedef kârınızı karşılayan satış fiyatını görün.';
+
+            const catSel = $('m-prod-category');
+            if (!catSel.dataset.done) {
+                catSel.dataset.done = '1';
+                catSel.innerHTML = PRODUCT_CATEGORIES.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+            }
+            catSel.value = 'Diğer';
+            $('m-prod-type').value = 'uretilen';
+            $('m-prod-cost').value = '';
 
             if (prodId) {
                 const m = state.models.find(x => x.id === prodId);
@@ -1242,14 +1523,28 @@
                     $('m-prod-name').value = m.name;
                     $('m-prod-fil').value = m.filGr;
                     $('m-prod-price').value = m.price;
+                    $('m-prod-price-simple').value = m.price;
+                    catSel.value = PRODUCT_CATEGORIES.includes(m.category) ? m.category : 'Diğer';
+                    $('m-prod-type').value = m.ptype || 'uretilen';
+                    $('m-prod-cost').value = (m.ptype === 'hazir') ? ((productAvgCost(m) || m.costPrice || '') === '' ? '' : (productAvgCost(m) || m.costPrice)) : '';
                     currentRecipe = (m.recipe || []).map(r => ({ ...r }));
                 }
             }
+            onProductTypeChange();
             updateRecipeUI();
             const sel = $('m-prod-acc-sel');
             sel.innerHTML = '<option value="">Aksesuar Seç...</option>';
             state.accessories.forEach(a => sel.innerHTML += `<option value="${a.id}">${a.name} (stok: ${a.qty})</option>`);
             openModal('modal-product');
+        }
+
+        function onProductTypeChange() {
+            const t = $('m-prod-type').value;
+            const isUret = t === 'uretilen';
+            const isHazir = t === 'hazir';
+            $('m-prod-produced-wrap').classList.toggle('hidden', !isUret);
+            $('m-prod-simple-wrap').classList.toggle('hidden', isUret);
+            $('m-prod-cost-wrap').classList.toggle('hidden', !isHazir);
         }
 
         function addRecipeItem() {
@@ -1272,7 +1567,7 @@
             `).join('') || '<p class="text-xs text-slate-400">Henüz aksesuar eklenmedi.</p>';
         }
 
-        // --- Tersine Hesaplama: hedef net kâr marjına göre satış fiyatı ---
+        // --- Tersine Hesaplama: hedef net kâr marjına göre satış fiyatı (üretim ürünleri) ---
         function calcSmartPrice() {
             const filGr = parseFloat($('m-prod-fil').value) || 0;
             const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
@@ -1290,10 +1585,11 @@
             const totalCost = materialCost + overheadPerUnit;
 
             const fin = finSummary();
-            const bracketRate = fin.bracketRate;
+            const bracketRate = fin.bracketRate; // güncel vergi dilimi
             const target = (parseFloat($('m-prod-target').value) || s.targetProfit || 30) / 100;
             const kdvRate = s.kdvRate / 100;
 
+            // Net kâr marjı = (P_net - maliyet) * (1 - vergi) / P_net = hedef
             const denom = (1 - bracketRate / 100) - target;
             if (denom <= 0) {
                 $('m-prod-smart-info').innerHTML = '<div class="text-rose-600 font-bold">Hedef kâr marjı, vergi diliminizle birlikte mümkün değil. Hedefi düşürün (örn. %' + Math.max(1, Math.floor((1 - bracketRate / 100) * 100) - 5) + ').</div>';
@@ -1315,76 +1611,70 @@
                 <div class="flex justify-between"><span class="text-slate-500">KDV (%${s.kdvRate}):</span> <b class="text-sky-700">${fmt(kdvAmt)}</b></div>
                 <div class="flex justify-between"><span class="text-slate-500">Hedef Net Kâr:</span> <b class="text-emerald-700">${fmt(netProfit)}</b></div>
                 <div class="mt-2 bg-emerald-50 border border-emerald-200 p-2 rounded text-emerald-800">
-                    💡 %${(target*100).toFixed(0)} net kâr için <b>KDV dahil ${fmt(priceKdv)}</b> satmalısınız.
+                    %${(target*100).toFixed(0)} net kâr için <b>KDV dahil ${fmt(priceKdv)}</b> satmalısınız.
                     <div class="text-[10px] text-slate-500 mt-1">Zarar etmemek için minimum: ${fmt(beKdv)}</div>
                 </div>
             `;
             $('m-prod-price').value = Math.ceil(priceKdv);
+            $('m-prod-price-simple').value = Math.ceil(priceKdv);
         }
 
         function saveProduct() {
             const id = $('m-prod-id').value;
             const name = $('m-prod-name').value.trim();
-            const filGr = parseFloat($('m-prod-fil').value);
-            const price = parseFloat($('m-prod-price').value);
-            if (!name || isNaN(filGr) || isNaN(price) || price <= 0) return alert('Eksik veya hatalı bilgi.');
+            const ptype = $('m-prod-type').value;
+            const category = $('m-prod-category').value || 'Diğer';
+            const price = parseFloat($('m-prod-price').value) || parseFloat($('m-prod-price-simple').value) || 0;
+            if (!name || isNaN(price) || price <= 0) return alert('Ürün adı ve satış fiyatı zorunludur.');
+            let filGr = 0, recipe = [], costPrice = 0;
+            if (ptype === 'uretilen') {
+                filGr = parseFloat($('m-prod-fil').value);
+                if (isNaN(filGr) || filGr < 0) return alert('Filament gramı geçerli bir sayı olmalıdır.');
+                recipe = [...currentRecipe];
+            } else if (ptype === 'hazir') {
+                costPrice = parseFloat($('m-prod-cost').value) || 0;
+                if (costPrice < 0) return alert('Alış maliyeti geçersiz.');
+            }
             if (id) {
                 const m = state.models.find(x => x.id === id);
-                if (m) { m.name = name; m.filGr = filGr; m.price = price; m.recipe = [...currentRecipe]; }
+                if (m) { m.name = name; m.filGr = filGr; m.price = price; m.recipe = recipe; m.ptype = ptype; m.category = category; m.costPrice = costPrice; }
             } else {
-                state.models.push({ id: 'PRD' + Date.now(), name, filGr, price, recipe: [...currentRecipe], stock: 0, date: new Date().toISOString() });
+                state.models.push({ id: 'PRD' + Date.now(), name, filGr, price, recipe, ptype, category, costPrice, stock: 0, date: new Date().toISOString() });
             }
             saveState(); renderAll(); closeModal('modal-product');
         }
 
-        // --- Üretim: hammadde tüketim yardımcıları ---
-        // Verilen model ve adet için reçeteye göre hammadde yeterliliğini kontrol eder, yeterliyse stoktan düşer.
-        function consumeMaterials(m, qty) {
-            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
-            const usedFil = (m.filGr || 0) * qty;
-            if (usedFil > state.filament.totalGr) return 'Yetersiz filament stoğu! Gerekli: ' + usedFil + ' gr, Mevcut: ' + fmtN(state.filament.totalGr) + ' gr';
-            for (const r of (m.recipe || [])) {
-                const a = state.accessories.find(x => x.id === r.id);
-                if (!a || a.qty < (r.qty * qty)) return 'Yetersiz aksesuar stoğu: ' + (a ? a.name : 'Bilinmeyen') + ' (Gerekli: ' + (r.qty * qty) + ', Mevcut: ' + (a ? a.qty : 0) + ')';
-            }
-            state.filament.totalGr -= usedFil;
-            state.filament.totalCost -= (usedFil * filAvg);
-            (m.recipe || []).forEach(r => {
-                const acc = state.accessories.find(a => a.id === r.id);
-                if (acc) {
-                    const avg = acc.qty > 0 ? (acc.totalCost / acc.qty) : 0;
-                    const used = r.qty * qty;
-                    acc.qty -= used;
-                    acc.totalCost -= (used * avg);
-                    if (acc.qty < 0) acc.qty = 0;
-                    if (acc.totalCost < 0) acc.totalCost = 0;
-                }
-            });
-            return null; // hata yok
+        // --- Ürün maliyeti: türe göre hesaplanır ---
+        function productAvgCost(m) {
+            const logs = (state.productStockLogs || []).filter(l => l.productId === m.id && l.unitCost !== undefined && l.unitCost !== null);
+            let tq = 0, tc = 0;
+            logs.forEach(l => { tq += (l.qty || 0); tc += (l.total || ((l.qty || 0) * (l.unitCost || 0))); });
+            if (tq > 0) return tc / tq;
+            return m.costPrice || 0;
         }
 
-        // Üretim iptal/düzeltme: hammaddeyi stoğa geri ekler (ortalama maliyetle)
-        function restoreMaterials(m, qty) {
+        function productCost(m) {
+            if (m.ptype === 'hazir') return productAvgCost(m) || 0;
+            if (m.ptype === 'hizmet') return 0;
             const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
-            const usedFil = (m.filGr || 0) * qty;
-            state.filament.totalGr += usedFil;
-            state.filament.totalCost += (usedFil * filAvg);
-            (m.recipe || []).forEach(r => {
-                const acc = state.accessories.find(a => a.id === r.id);
-                if (acc) {
-                    const avg = acc.qty > 0 ? (acc.totalCost / acc.qty) : 0;
-                    const used = r.qty * qty;
-                    acc.qty += used;
-                    acc.totalCost += (used * avg);
-                }
-            });
+            let mC = (m.filGr || 0) * filAvg;
+            (m.recipe || []).forEach(r => { const a = state.accessories.find(x => x.id === r.id); if (a && a.qty > 0) mC += (r.qty * (a.totalCost / a.qty)); });
+            return mC;
         }
 
         function openProductStockModal(prodId) {
+            const m = state.models.find(x => x.id === prodId);
+            if (!m) return;
             $('m-prd-stock-id').value = prodId;
             $('m-prd-stock-qty').value = '';
+            $('m-prd-stock-unit').value = '';
+            $('m-prd-stock-fat').checked = false;
             $('m-prd-stock-date').value = todayStr();
             $('m-prd-stock-note').value = '';
+            const ptype = m.ptype || 'uretilen';
+            const isHazir = ptype === 'hazir';
+            $('m-prd-cost-section').classList.toggle('hidden', !isHazir);
+            $('m-prd-stock-title-hint').innerText = m.name + ' — ' + (isHazir ? 'Hazır ürün: alış maliyetiyle stok girişi' : (ptype === 'hizmet' ? 'Hizmet ürünü: stok takibi gerekmez' : 'Üretim: bitmiş ürün stoğa eklenecek'));
             openModal('modal-product-stock');
         }
 
@@ -1396,11 +1686,22 @@
             const dateVal = $('m-prd-stock-date').value || todayStr();
             const note = $('m-prd-stock-note').value.trim();
             if (!(qty > 0)) return alert('Geçerli adet girin.');
-            // Üretim: hammadde tüketimi
-            const err = consumeMaterials(m, qty);
-            if (err) return alert(err);
+            const ptype = m.ptype || 'uretilen';
+            const log = { id: 'PSL' + Date.now(), productId, qty, date: new Date(dateVal).toISOString(), note };
+            if (ptype === 'hazir') {
+                const unitCost = parseFloat($('m-prd-stock-unit').value);
+                if (isNaN(unitCost) || unitCost < 0) return alert('Hazır ürün için birim alış fiyatı girin.');
+                const faturali = $('m-prd-stock-fat').checked;
+                const total = unitCost * qty;
+                const br = kdvBreakdown(total);
+                log.unitCost = unitCost;
+                log.total = total;
+                log.faturali = faturali;
+                log.matrah = faturali ? br.matrah : total;
+                log.kdv = faturali ? br.kdv : 0;
+            }
             m.stock = (m.stock || 0) + qty;
-            state.productStockLogs.push({ id: 'PSL' + Date.now(), productId, qty, date: new Date(dateVal).toISOString(), note });
+            state.productStockLogs.push(log);
             saveState(); renderAll(); closeModal('modal-product-stock');
         }
 
@@ -1421,25 +1722,6 @@
             saveState(); renderAll();
         }
 
-        function deleteProduct(id) {
-            state.models = state.models.filter(m => m.id !== id);
-            saveState(); renderAll();
-        }
-
-        function deleteAccessory(id) {
-            const acc = state.accessories.find(a => a.id === id);
-            if (!acc) return;
-            state.accessories = state.accessories.filter(a => a.id !== id);
-            state.accessoryLogs = state.accessoryLogs.filter(l => l.accId !== id);
-            state.models.forEach(m => { m.recipe = (m.recipe || []).filter(r => r.id !== id); });
-            saveState(); renderAll();
-        }
-
-        function deleteAsset(id) {
-            state.assets = state.assets.filter(a => a.id !== id);
-            saveState(); renderAll();
-        }
-
         // ====
         //  TAB 4: KANBAN & POS
         // ====
@@ -1447,87 +1729,104 @@
             posCart = [];
             const dSel = $('pos-dealer');
             dSel.innerHTML = state.dealers.map(d => `<option value="${d.id}">${esc(d.name)} (${esc(d.category || d.type || 'Bireysel Müşteri')})</option>`).join('') || '<option value="">Önce bayi ekleyin...</option>';
+            $('pos-cat-filter').innerHTML = '<option value="">Tüm Kategoriler</option>' + PRODUCT_CATEGORIES.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
             renderPosProducts();
             renderCart();
             openModal('modal-pos');
         }
 
-        // POS ürün listesi: her ürünün sağında − / adet kutusu / + bulunur.
-        // Kutuya doğrudan adet yazılabilir; +/− ile artırılıp azaltılabilir.
         function renderPosProducts() {
-            const sortedModels = [...state.models].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-            $('pos-products').innerHTML = sortedModels.map(m => {
-                const st = m.stock || 0;
-                const inCart = posCart.find(c => c.mId === m.id);
-                const cartQty = inCart ? inCart.qty : 0;
-                const ok = st > 0;
-                const canMinus = cartQty > 0;
-                const canPlus = ok && cartQty < st;
-                return `
-                <div class="bg-white p-2 rounded border shadow-sm ${ok ? '' : 'opacity-60'}">
-                    <div class="flex justify-between items-center gap-2">
-                    <div class="min-w-0">
-                    <div class="font-bold text-sm text-slate-800">${esc(m.name)}</div>
-                    <div class="text-xs text-emerald-600 font-semibold">${(m.price || 0).toFixed(2)} ₺</div>
-                    <div class="text-[10px] ${ok ? 'text-slate-500' : 'text-rose-500 font-semibold'}">Mevcut ürün stoğu: ${st} adet</div>
-                    </div>
-                    <div class="flex items-center gap-1 flex-shrink-0">
-                    <button onclick="setCartQty('${m.id}', ${cartQty - 1})" ${canMinus ? '' : 'disabled'}
-                    class="w-7 h-7 rounded font-bold text-sm leading-none ${canMinus ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">−</button>
-                    <input type="number" min="0" max="${st}" value="${cartQty}"
-                    onchange="setCartQty('${m.id}', this.value)"
-                    class="w-14 text-center border border-slate-300 rounded p-1 text-sm font-bold focus:border-sky-500 outline-none" ${ok ? '' : 'disabled'}>
-                    <button onclick="setCartQty('${m.id}', ${cartQty + 1})" ${canPlus ? '' : 'disabled'}
-                    class="w-7 h-7 rounded font-bold text-sm leading-none ${canPlus ? 'bg-sky-100 hover:bg-sky-200 text-sky-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">+</button>
-                    </div>
-                    </div>
-                </div>`;
-            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Henüz ürün eklenmedi.</p>';
+            const filter = $('pos-cat-filter') ? $('pos-cat-filter').value : '';
+            const list = state.models.filter(m => !filter || (m.category || 'Diğer') === filter);
+            const known = PRODUCT_CATEGORIES.filter(cat => list.some(m => (m.category || 'Diğer') === cat));
+            const restCats = [...new Set(list.map(m => (m.category || 'Diğer')))].filter(c => !PRODUCT_CATEGORIES.includes(c));
+            let html = '';
+            known.concat(restCats).forEach(cat => {
+                const inCat = list.filter(m => (m.category || 'Diğer') === cat).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+                if (!inCat.length) return;
+                html += `<div class="text-[10px] uppercase tracking-wider font-bold text-slate-400 pt-1">${esc(cat)}</div>`;
+                inCat.forEach(m => { html += posProductRow(m); });
+            });
+            $('pos-products').innerHTML = html || '<p class="text-center text-slate-400 text-sm py-4">Henüz ürün eklenmedi.</p>';
         }
 
-        // Ürünün sepet adetini ayarlar: +/− butonları, kutuya yazılan adet ve
-        // sepetten silme işlemlerinin tamamı bu fonksiyon üzerinden yürür.
-        function setCartQty(mId, qty) {
+        function posProductRow(m) {
+            const ptype = m.ptype || 'uretilen';
+            const tracked = ptype !== 'hizmet';
+            const st = m.stock || 0;
+            const inCart = posCart.find(c => c.mId === m.id);
+            const q = inCart ? inCart.qty : 0;
+            const stockTxt = !tracked ? 'Stoksuz hizmet' : ('Stok: ' + st + ' adet');
+            const stockCls = (tracked && st <= 0) ? 'text-rose-500 font-semibold' : 'text-slate-500';
+            return `
+            <div class="bg-white p-2 rounded border shadow-sm">
+                <div class="flex justify-between items-center gap-2">
+                    <div class="min-w-0">
+                    <div class="font-bold text-sm text-slate-800 truncate">${esc(m.name)}</div>
+                    <div class="text-xs text-emerald-600 font-semibold">${(m.price||0).toFixed(2)} ₺</div>
+                    <div class="text-[10px] ${stockCls}">${stockTxt}</div>
+                    </div>
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                    <button onclick="posQtyChange('${m.id}', -1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 w-7 h-7 rounded font-bold leading-none">−</button>
+                    <input type="number" min="0" value="${q}" onchange="posQtySet('${m.id}', this.value)" class="w-12 border border-slate-300 rounded text-center text-sm h-7">
+                    <button onclick="posQtyChange('${m.id}', 1)" class="bg-sky-100 hover:bg-sky-200 text-sky-700 w-7 h-7 rounded font-bold leading-none">+</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function posQtyChange(mId, delta) {
             const m = state.models.find(x => x.id === mId);
             if (!m) return;
-            qty = parseInt(qty);
-            if (isNaN(qty) || qty < 0) qty = 0;
-            const stock = m.stock || 0;
-            if (qty > stock) {
-                alert('Bu ürün için yeterli stok yok. Mevcut ürün stoğu: ' + stock + ' adet');
-                qty = stock;
+            const cur = (posCart.find(c => c.mId === mId) || { qty: 0 }).qty;
+            posQtyApply(m, cur + delta);
+        }
+
+        function posQtySet(mId, val) {
+            const m = state.models.find(x => x.id === mId);
+            if (!m) return;
+            posQtyApply(m, parseInt(val) || 0);
+        }
+
+        function posQtyApply(m, nq) {
+            nq = Math.max(0, Math.floor(nq));
+            const tracked = (m.ptype || 'uretilen') !== 'hizmet';
+            if (tracked && nq > (m.stock || 0)) {
+                alert('Stokta sadece ' + (m.stock || 0) + ' adet var: ' + m.name);
+                nq = Math.max(0, m.stock || 0);
             }
-            const ex = posCart.find(c => c.mId === mId);
-            if (qty <= 0) {
-                posCart = posCart.filter(c => c.mId !== mId);
-            } else if (ex) {
-                ex.qty = qty;
-            } else {
-                posCart.push({ mId, qty, unitPrice: m.price || 0 });
-            }
-            renderCart();
-            renderPosProducts(); // adet kutularını ve +/− durumlarını senkronize et
+            const idx = posCart.findIndex(c => c.mId === m.id);
+            if (nq <= 0) { if (idx > -1) posCart.splice(idx, 1); }
+            else if (idx > -1) { posCart[idx].qty = nq; posCart[idx].unitPrice = m.price || 0; }
+            else posCart.push({ mId: m.id, qty: nq, unitPrice: m.price || 0 });
+            renderCart(); renderPosProducts();
+        }
+
+        function addToCart(mId) { posQtyChange(mId, 1); }
+
+        function removeFromCart(mId) {
+            posCart = posCart.filter(c => c.mId !== mId);
+            renderCart(); renderPosProducts();
         }
 
         function renderCart() {
-            let tot = 0, totQty = 0;
+            let tot = 0, cnt = 0;
             $('pos-cart').innerHTML = posCart.map(c => {
                 const m = state.models.find(x => x.id === c.mId);
                 if (!m) return '';
                 const unitPrice = c.unitPrice ?? m.price ?? 0;
-                const lineTot = unitPrice * c.qty; tot += lineTot; totQty += (parseFloat(c.qty) || 0);
+                const lineTot = unitPrice * c.qty; tot += lineTot; cnt += (c.qty || 0);
                 return `
                 <div class="flex justify-between items-center text-sm border-b py-1">
                     <span>${c.qty}x ${esc(m.name)}</span>
                     <div class="flex items-center gap-2">
                     <span class="font-semibold">${lineTot.toFixed(2)} ₺</span>
-                    <button onclick="setCartQty('${m.id}', 0)" class="text-rose-500 font-bold px-1">X</button>
+                    <button onclick="removeFromCart('${m.id}')" class="text-rose-500 font-bold px-1">X</button>
                     </div>
                 </div>`;
             }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Sepet boş.</p>';
             $('pos-total').innerText = tot.toFixed(2) + ' ₺';
-            // Sepet İçeriği başlığındaki toplam adet rozeti
-            if ($('pos-cart-count')) $('pos-cart-count').innerText = fmtN(totQty) + ' adet';
+            if ($('pos-cart-count')) $('pos-cart-count').innerText = cnt + ' adet';
         }
 
         function submitPosOrder() {
@@ -1535,34 +1834,58 @@
             const locId = $('pos-dealer').value;
             if (!locId) return alert('Lütfen müşteri / bayi seçin.');
 
-            // Satışta yalnızca ÜRÜN stoğu düşer (hammadde tüketimi üretim anında yapılır)
+            // --- Stok kontrolü (hizmet ürünleri hariç) ---
             for (const c of posCart) {
                 const m = state.models.find(x => x.id === c.mId);
                 if (!m) return alert('Sepette geçersiz ürün var.');
-                if ((m.stock || 0) < c.qty) return alert(`${m.name} için ürün stoğu yetersiz. Mevcut: ${m.stock || 0}`);
+                if ((m.ptype || 'uretilen') !== 'hizmet' && (m.stock || 0) < c.qty)
+                    return alert(`${m.name} için ürün stoğu yetersiz. Mevcut: ${m.stock || 0}`);
             }
 
             let tot = 0;
+            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+
             const items = posCart.map(c => {
                 const m = state.models.find(x => x.id === c.mId);
                 const unitPrice = c.unitPrice ?? m.price ?? 0;
                 const qty = parseFloat(c.qty) || 0;
                 tot += unitPrice * qty;
-                m.stock = (m.stock || 0) - qty;
+                const ptype = m.ptype || 'uretilen';
+
+                // Ürün stoğunu düş (hizmet ürünlerinde stok yok)
+                if (ptype !== 'hizmet') m.stock = (m.stock || 0) - qty;
+
+                // Sadece ÜRETİLEN ürünlerde reçetedeki filament ve aksesuarlar orantılı düşer
+                if (ptype === 'uretilen') {
+                    const usedFil = (m.filGr || 0) * qty;
+                    state.filament.totalGr -= usedFil;
+                    state.filament.totalCost -= (usedFil * filAvg);
+                    (m.recipe || []).forEach(r => {
+                        const acc = state.accessories.find(a => a.id === r.id);
+                        if (acc && acc.qty > 0) {
+                            const accAvg = acc.totalCost / acc.qty;
+                            const usedAcc = r.qty * qty;
+                            acc.qty -= usedAcc;
+                            acc.totalCost -= (usedAcc * accAvg);
+                        }
+                    });
+                }
                 return { mId: c.mId, qty, unitPrice };
             });
 
-            // Sipariş oluşturma anında henüz fatura yok: matrah = tutar, KDV = 0.
-            // Fatura tipi, teslim anında (veya düzenleme penceresinden) belirlenir.
+            // Satış anında fiyatlar KDV hariç matrah kabul edilir; faturalı teslimde KDV üstüne eklenir
             state.orders.push({
                 id: 'ORD' + Date.now(), locId, items, total: tot, matrah: tot, kdv: 0,
                 status: 'pending', type: '', invoiceNo: '',
                 date: new Date().toISOString(), deliveryDate: '', paymentStatus: 'pending', dueDate: '', paidDate: '',
                 stockDeducted: true
             });
+            posCart = [];
             saveState(); renderAll(); closeModal('modal-pos');
         }
-
+        // ====
+        //  TESLİMAT & TAHSİLAT
+        // ====
         function toggleInvInput() {
             const t = document.querySelector('input[name="del_type"]:checked').value;
             $('mdl-del-inv').style.display = t === 'faturalı' ? 'block' : 'none';
@@ -1592,6 +1915,14 @@
 
             const o = state.orders.find(x => x.id === oId);
             if (o) {
+                // Teslimi geri alındıysa stok zaten geri eklenmişti; yeniden teslimde çift düşüm olmasın
+                if (o.stockDeducted === false) {
+                    (o.items || []).forEach(it => {
+                        const m = state.models.find(x => x.id === it.mId);
+                        if (m && (m.ptype || 'uretilen') !== 'hizmet') m.stock = (m.stock || 0) - (parseFloat(it.qty) || 0);
+                    });
+                    o.stockDeducted = true;
+                }
                 o.status = 'delivered';
                 o.type = type;
                 o.invoiceNo = type === 'faturalı' ? inv : '';
@@ -1600,7 +1931,7 @@
                 o.paidDate = payType === 'now' ? new Date().toISOString() : '';
                 o.dueDate = payType === 'later' ? due : '';
 
-                // Fatura tipine göre KDV'yi hesapla
+                // Fatura tipine göre KDV: birim fiyatlar KDV hariç matrah kabul edilir
                 const baseMatrah = (o.items || []).reduce((s, it) => s + ((it.qty || 0) * (it.unitPrice || 0)), 0);
                 const rate = (state?.settings?.kdvRate || 20) / 100;
                 o.matrah = baseMatrah;
@@ -1610,7 +1941,7 @@
             saveState(); renderAll(); closeModal('modal-delivery');
         }
 
-        // --- Cari hesap: tahsilat / tahsilat geri alma ---
+        // --- Cari hesap: tahsilat ---
         function collectPayment(oId) {
             const o = state.orders.find(x => x.id === oId);
             if (!o) return;
@@ -1632,16 +1963,16 @@
         function undoDelivery(oId) {
             const o = state.orders.find(x => x.id === oId);
             if (!o || o.status !== 'delivered') return;
-            // Teslim geri alındığında yalnızca ürün stoğu iade edilir (hammadde üretim anında tüketilmişti)
-            if (o.stockDeducted) {
-                const needs = {};
-                (o.items || []).forEach(it => { needs[it.mId] = (needs[it.mId] || 0) + (parseFloat(it.qty) || 0); });
-                Object.entries(needs).forEach(([mId, qty]) => {
-                    const m = state.models.find(x => x.id === mId);
-                    if (m) m.stock = (m.stock || 0) + qty;
-                });
-                o.stockDeducted = false;
-            }
+            const needs = {};
+            (o.items || []).forEach(it => {
+                const m = state.models.find(x => x.id === it.mId);
+                if (m && (m.ptype || 'uretilen') !== 'hizmet') needs[it.mId] = (needs[it.mId] || 0) + (parseFloat(it.qty) || 0);
+            });
+            Object.entries(needs).forEach(([mId, qty]) => {
+                const m = state.models.find(x => x.id === mId);
+                if (m) m.stock = (m.stock || 0) + qty;
+            });
+            o.stockDeducted = false;
             o.status = 'pending';
             o.type = '';
             o.invoiceNo = '';
@@ -1691,7 +2022,7 @@
                 const lim = i === 5 ? null : (parseFloat(limEl.value) || null);
                 newBrackets.push({ limit: lim, rate });
             }
-            if (newBrackets.length) s.brackets = sortBrackets(newBrackets);
+            if (newBrackets.length) s.brackets = newBrackets;
             saveState(); renderAll();
         }
 
@@ -1705,6 +2036,11 @@
                 date: new Date().toISOString()
             });
             saveState(); renderAll(); e.target.reset();
+        }
+
+        function deleteAsset(id) {
+            state.assets = state.assets.filter(a => a.id !== id);
+            saveState(); renderAll();
         }
 
         // --- Vergi hesaplamaları ---
@@ -1737,10 +2073,10 @@
             let cashIn = 0, cashOut = 0;
             state.orders.forEach(o => { if (o.status === 'delivered' && o.paymentStatus === 'paid') cashIn += (o.total || 0); });
             state.transactions.forEach(t => { if (t.type === 'in') cashIn += t.amount; else cashOut += t.amount; });
-            // Kasa çıkışı = yapılan gerçek alımlar (depo kayıtları). Mevcut stok değeri değil,
-            // alım kayıtları esas alınır; böylece satış yapmak geçmiş kasa çıkışını geri almaz.
-            state.filamentLogs.forEach(l => { cashOut += (l.pr || 0); });
-            state.accessoryLogs.forEach(l => { cashOut += (l.total ?? l.price ?? 0); });
+            cashOut += state.filament.totalCost;
+            state.accessories.forEach(a => cashOut += (a.totalCost || 0));
+            // Hazır ürün alışları da kasa çıkışıdır
+            state.productStockLogs.forEach(l => { if (l.total) cashOut += l.total; });
             const netCash = cashIn - cashOut;
 
             let alacak = 0;
@@ -1753,6 +2089,7 @@
             state.filamentLogs.forEach(l => { if (l.faturali) { faturaliGider += (l.matrah ?? 0); kdvGiren += (l.kdv ?? 0); } });
             state.accessoryLogs.forEach(l => { if (l.faturali) { faturaliGider += (l.matrah ?? 0); kdvGiren += (l.kdv ?? 0); } });
             state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) { const br = kdvBreakdown(t.amount || 0); faturaliGider += br.matrah; kdvGiren += br.kdv; } });
+            state.productStockLogs.forEach(l => { if (l.total && l.faturali) { faturaliGider += (l.matrah || 0); kdvGiren += (l.kdv || 0); } });
 
             const yearlyFixed = (s.musavir * 12) + (s.kdvDamga * 12) + (s.muhtasarDamga * 12) + (s.geciciDamga * 4);
             let yearlyAst = 0;
@@ -1770,6 +2107,7 @@
         //  ANA RENDER MOTORU
         // ====
         function renderAll() {
+            populateCategorySelects();
             renderDashboard();
             renderMaterials();
             renderProducts();
@@ -1779,6 +2117,16 @@
             renderAccounting();
             renderReports();
             renderSettings();
+        }
+
+        function populateCategorySelects() {
+            const sel = $('inp-prod-cat-filter');
+            if (sel && !sel.dataset.done) {
+                sel.dataset.done = '1';
+                const cur = sel.value;
+                sel.innerHTML = '<option value="">Tüm Kategoriler</option>' + PRODUCT_CATEGORIES.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+                sel.value = cur || '';
+            }
         }
 
         // --- Dashboard ---
@@ -1815,8 +2163,8 @@
                 let tot = 0;
                 state.orders.forEach(o => {
                     if (o.status === 'delivered' && o.paymentStatus === 'paid') {
-                        const d = new Date(o.deliveryDate || o.date);
-                        if (d.getFullYear() === mm.y && d.getMonth() === mm.m) tot += o.total;
+                    const d = new Date(o.deliveryDate || o.date);
+                    if (d.getFullYear() === mm.y && d.getMonth() === mm.m) tot += o.total;
                     }
                 });
                 return tot;
@@ -1832,6 +2180,8 @@
             const alerts = [];
             if (lowFil) alerts.push({ icon: 'ph-spinner-gap', txt: 'Filament stoğu düşük: ' + fmtN(state.filament.totalGr) + ' gr', cls: 'bg-amber-50 border-amber-200 text-amber-800' });
             lowAccs.forEach(a => alerts.push({ icon: 'ph-link', txt: a.name + ' stoğu düşük: ' + a.qty + ' adet', cls: 'bg-amber-50 border-amber-200 text-amber-800' }));
+            const lowProd = state.models.filter(m => (m.ptype || 'uretilen') !== 'hizmet' && (m.stock || 0) <= 0);
+            if (lowProd.length) alerts.push({ icon: 'ph-package', txt: lowProd.length + ' üründe ürün stoğu tükendi', cls: 'bg-amber-50 border-amber-200 text-amber-800' });
             if (fin.alacak > 0) alerts.push({ icon: 'ph-handshake', txt: 'Bekleyen tahsilat: ' + fmt(fin.alacak), cls: 'bg-purple-50 border-purple-200 text-purple-800' });
             if (fin.odenecekKdv > 0) alerts.push({ icon: 'ph-receipt', txt: 'Ödenecek KDV: ' + fmt(fin.odenecekKdv), cls: 'bg-rose-50 border-rose-200 text-rose-800' });
             if (!alerts.length) alerts.push({ icon: 'ph-check-circle', txt: 'Her şey yolunda, uyarı yok.', cls: 'bg-emerald-50 border-emerald-200 text-emerald-800' });
@@ -1847,8 +2197,8 @@
                 const st = o.status === 'pending'
                     ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Üretimde</span>'
                     : (o.paymentStatus === 'paid'
-                        ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Tahsil Edildi</span>'
-                        : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Alacak</span>');
+                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Tahsil Edildi</span>'
+                    : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Alacak</span>');
                 return `
                 <div class="flex justify-between items-center border-b border-slate-100 pb-2 text-sm">
                     <div><span class="font-semibold text-slate-800">${esc(d ? d.name : '?')}</span>
@@ -1868,7 +2218,7 @@
                     <span class="text-xs ${overdue ? 'text-rose-500 font-bold' : 'text-slate-400'} ml-2">${o.dueDate ? 'Vade: ' + new Date(o.dueDate).toLocaleDateString('tr-TR') : ''}${overdue ? ' (GECİKMİŞ)' : ''}</span></div>
                     <b class="text-purple-700">${fmt(o.total)}</b>
                 </div>`;
-            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen tahsilat yok. 🎉</p>';
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen tahsilat yok.</p>';
         }
 
         // --- Hammadde ---
@@ -1914,32 +2264,57 @@
             }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Aksesuar yok.</td></tr>';
         }
 
+        function deleteAccessory(id) {
+            const acc = state.accessories.find(a => a.id === id);
+            if (!acc) return;
+            state.accessories = state.accessories.filter(a => a.id !== id);
+            state.accessoryLogs = state.accessoryLogs.filter(l => l.accId !== id);
+            state.models.forEach(m => { m.recipe = (m.recipe || []).filter(r => r.id !== id); });
+            saveState(); renderAll();
+        }
+
         // --- Ürünler ---
         function renderProducts() {
-            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            populateCategorySelects();
             const q = ($('inp-prod-search').value || '').toLowerCase().trim();
+            const cat = $('inp-prod-cat-filter') ? $('inp-prod-cat-filter').value : '';
             const list = state.models
                 .filter(m => !q || m.name.toLowerCase().includes(q))
+                .filter(m => !cat || (m.category || 'Diğer') === cat)
                 .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
             $('ui-products-grid').innerHTML = list.map(m => {
-                let mC = m.filGr * filAvg;
-                (m.recipe || []).forEach(r => { const a = state.accessories.find(x => x.id === r.id); if (a && a.qty > 0) mC += (r.qty * (a.totalCost / a.qty)); });
+                const ptype = m.ptype || 'uretilen';
+                const mC = productCost(m);
                 const prf = mC > 0 ? ((m.price - mC) / mC) * 100 : 0;
+                const typeBadge = ptype === 'uretilen'
+                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 border border-sky-200">Üretim</span>'
+                    : ptype === 'hazir'
+                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">Hazır Ürün</span>'
+                    : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">Hizmet</span>';
+                const catBadge = `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">${esc(m.category || 'Diğer')}</span>`;
+                let descLine;
+                if (ptype === 'uretilen') descLine = `${m.filGr || 0}gr Filament${(m.recipe && m.recipe.length) ? ' + ' + m.recipe.length + ' Aksesuar' : ''}`;
+                else if (ptype === 'hazir') descLine = `Dışarıdan alınmış — Ort. Alış: ${productAvgCost(m).toFixed(2)} ₺`;
+                else descLine = 'Hizmet / stoksuz satış';
+                const tracked = ptype !== 'hizmet';
                 return `
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 relative overflow-hidden flex flex-col">
-                    <div class="flex justify-between items-start mb-2">
+                    <div class="flex justify-between items-start mb-2 gap-2">
+                    <div>
                     <h3 class="font-bold text-lg text-slate-800">${esc(m.name)}</h3>
-                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold border border-emerald-200">${(m.price || 0).toFixed(2)} ₺</span>
+                    <div class="flex gap-1 mt-1 flex-wrap">${typeBadge}${catBadge}</div>
                     </div>
-                    <p class="text-xs text-slate-500 mb-2">${m.filGr}gr Filament${(m.recipe && m.recipe.length) ? ' + ' + m.recipe.length + ' Aksesuar' : ''}</p>
-                    <p class="text-xs mb-3">Mevcut Ürün Stoğu: <b class="${(m.stock || 0) > 0 ? 'text-emerald-700' : 'text-rose-600'}">${m.stock || 0} adet</b></p>
+                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold border border-emerald-200">${(m.price||0).toFixed(2)} ₺</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">${descLine}</p>
+                    ${tracked ? `<p class="text-xs mb-3">Mevcut Ürün Stoğu: <b class="${(m.stock||0)>0?'text-emerald-700':'text-rose-600'}">${m.stock||0} adet</b></p>` : '<p class="text-xs mb-3 text-slate-400">Stok takibi yapılmaz</p>'}
                     <div class="mt-auto bg-slate-50 p-2 rounded flex justify-between text-xs">
-                    <span class="text-slate-500">Saf Maliyet: <b class="text-slate-800">${mC.toFixed(2)}₺</b></span>
+                    <span class="text-slate-500">${ptype === 'hazir' ? 'Alış Maliyeti' : 'Saf Maliyet'}: <b class="text-slate-800">${mC.toFixed(2)}₺</b></span>
                     <span class="text-sky-600 font-bold">%${isFinite(prf) ? prf.toFixed(0) : 0} Brüt Kâr</span>
                     </div>
                     <div class="flex gap-2 mt-3 flex-wrap">
-                    <button onclick="openProductStockModal('${m.id}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-1.5 px-2 rounded text-xs font-bold">Stok Ekle</button>
-                    <button onclick="openProductHistory('${m.id}')" class="bg-violet-100 hover:bg-violet-200 text-violet-700 py-1.5 px-2 rounded text-xs font-bold">Stok Geçmişi</button>
+                    ${tracked ? `<button onclick="openProductStockModal('${m.id}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-1.5 px-2 rounded text-xs font-bold">Stok Ekle</button>
+                    <button onclick="openProductHistory('${m.id}')" class="bg-violet-100 hover:bg-violet-200 text-violet-700 py-1.5 px-2 rounded text-xs font-bold">Stok Geçmişi</button>` : ''}
                     <button onclick="openProductModal('${m.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 py-1.5 px-2 rounded text-xs font-bold">Düzenle</button>
                     <button onclick="askConfirm('Bu ürün silinecek. Emin misiniz?', ()=>deleteProduct('${m.id}'))" class="bg-rose-100 hover:bg-rose-200 text-rose-700 py-1.5 px-2 rounded text-xs font-bold">Sil</button>
                     </div>
@@ -1947,6 +2322,11 @@
             }).join('') || '<p class="text-center text-slate-400 text-sm py-8 col-span-full">Ürün bulunamadı.</p>';
         }
 
+        function deleteProduct(id) {
+            state.models = state.models.filter(m => m.id !== id);
+            posCart = posCart.filter(c => c.mId !== id);
+            saveState(); renderAll();
+        }
         // --- Bayiler ---
         function renderDealers() {
             const filter = $('inp-dealer-filter') ? $('inp-dealer-filter').value : '';
@@ -1957,8 +2337,8 @@
                 const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + (o.total || 0), 0);
                 const ordersHtml = dOrds.length ? dOrds.map(o => {
                     const itemsText = (o.items || []).map(i => {
-                        const m = state.models.find(x => x.id === i.mId);
-                        return `${i.qty}x ${m ? m.name : 'Ürün'}`;
+                    const m = state.models.find(x => x.id === i.mId);
+                    return `${i.qty}x ${m ? m.name : 'Ürün'}`;
                     }).join(', ');
                     const stLabel = o.status === 'pending' ? 'Bekliyor' : (o.paymentStatus === 'paid' ? 'Tahsil Edildi' : 'Teslim/Alacak');
                     return `<div class="border border-slate-200 rounded p-2 text-xs bg-slate-50">
@@ -1968,10 +2348,10 @@
                     <div>${o.dueDate ? ('Vade: ' + new Date(o.dueDate).toLocaleDateString('tr-TR')) : ''} ${o.deliveryDate ? ('· Teslim: ' + new Date(o.deliveryDate).toLocaleDateString('tr-TR')) : ''}</div>
                     <div class="mt-2 flex gap-1">
                     <button onclick="openOrderEditModal('${o.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold">Siparişi Düzenle</button>
-                    <button onclick="askConfirm('Bu sipariş silinecek. Ürün stoğu geri alınacak. Emin misiniz?', ()=>deleteLog('sales', '${o.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Siparişi Sil</button>
+                    <button onclick="askConfirm('Bu sipariş silinecek. Emin misiniz?', ()=>deleteLog('sales', '${o.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Siparişi Sil</button>
                     </div>
                     </div>`;
-                }).join('') : '<p class="text-xs text-slate-400">Sipariş geçmişi yok.</p>';
+                }).join('') : '<p class="text-xs text-slate-400">Sipariş geçmişi yok.</p>' ;
 
                 return `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-start">
@@ -2008,13 +2388,13 @@
                     <div class="flex justify-between items-end">
                     <span class="font-bold text-sky-700">${fmt(o.total)}</span>
                     ${o.status === 'pending'
-                        ? `<div class="flex gap-1"><button onclick="openOrderEditModal('${o.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">Düzenle</button><button onclick="promptDelivery('${o.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs shadow-sm">Teslim Et</button></div>`
-                        : `<div class="flex flex-col items-end gap-1">
+                    ? `<div class="flex gap-1"><button onclick="openOrderEditModal('${o.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">Düzenle</button><button onclick="promptDelivery('${o.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs shadow-sm">Teslim Et</button></div>`
+                    : `<div class="flex flex-col items-end gap-1">
                     <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${o.type === 'faturalı' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${o.type || ''}</span>
                     <div class="flex gap-1">
                     ${o.paymentStatus === 'pending'
-                        ? `<button onclick="collectPayment('${o.id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-[10px] shadow-sm">Tahsil Et</button>`
-                        : `<button onclick="undoCollectPayment('${o.id}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-[10px]">Tahsilatı Geri Al</button>`}
+                    ? `<button onclick="collectPayment('${o.id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-[10px] shadow-sm">Tahsil Et</button>`
+                    : `<button onclick="undoCollectPayment('${o.id}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-[10px]">Tahsilatı Geri Al</button>`}
                     <button onclick="undoDelivery('${o.id}')" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-[10px]">Teslimi Geri Al</button>
                     <button onclick="openOrderEditModal('${o.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-[10px]">Düzenle</button>
                     </div>
@@ -2054,7 +2434,7 @@
                     <button onclick="collectPayment('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded text-[11px] font-bold">Tahsil Et</button>
                     </div>
                 </div>`;
-            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen tahsilat yok. 🎉</p>';
+            }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen tahsilat yok.</p>';
         }
 
         // --- Muhasebe ---
@@ -2098,42 +2478,49 @@
             buildCalendar();
         }
 
-        // --- 12 Aylık Vergi Takvimi ---
+        // --- 12 Aylık Vergi Takvimi (seçili yıla göre) ---
         function buildCalendar() {
             const s = state.settings;
             const kdvRate = s.kdvRate / 100;
+            const y = currentYear; // Takvim, seçili yılın kayıtlarına göre hesaplanır
 
-            // Aylık net KDV (çıkan - giren)
+            // Aylık net KDV (çıkan - giren) — yalnızca seçili yıl
             const kdvByMonth = Array(12).fill(0);
             state.orders.forEach(o => {
                 if (o.status === 'delivered' && o.type === 'faturalı') {
-                    const m = new Date(o.deliveryDate || o.date).getMonth();
-                    kdvByMonth[m] += o.kdv;
+                    const d = new Date(o.deliveryDate || o.date);
+                    if (d.getFullYear() !== y) return;
+                    kdvByMonth[d.getMonth()] += o.kdv;
                 }
             });
             const addKdvGiren = (date, amount) => {
-                const m = new Date(date).getMonth();
-                kdvByMonth[m] -= (amount - amount / (1 + kdvRate));
+                const d = new Date(date);
+                if (d.getFullYear() !== y) return;
+                kdvByMonth[d.getMonth()] -= (amount - amount / (1 + kdvRate));
             };
             state.filamentLogs.forEach(l => { if (l.faturali) addKdvGiren(l.date, l.pr); });
             state.accessoryLogs.forEach(l => { if (l.faturali) addKdvGiren(l.date, l.price); });
             state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addKdvGiren(t.date, t.amount); });
+            state.productStockLogs.forEach(l => { if (l.total && l.faturali) addKdvGiren(l.date, l.total); });
 
-            // Çeyreklik matrah (geçici vergi için)
+            // Çeyreklik matrah (geçici vergi için) — yalnızca seçili yıl
             const qGelir = [0, 0, 0, 0], qGider = [0, 0, 0, 0];
             state.orders.forEach(o => {
                 if (o.status === 'delivered' && o.type === 'faturalı') {
-                    const m = new Date(o.deliveryDate || o.date).getMonth();
-                    qGelir[Math.floor(m / 3)] += o.matrah;
+                    const d = new Date(o.deliveryDate || o.date);
+                    if (d.getFullYear() !== y) return;
+                    qGelir[Math.floor(d.getMonth() / 3)] += o.matrah;
                 }
             });
             const addQGider = (date, amount) => {
-                const m = new Date(date).getMonth();
-                qGider[Math.floor(m / 3)] += amount / (1 + kdvRate);
+                const d = new Date(date);
+                if (d.getFullYear() !== y) return;
+                qGider[Math.floor(d.getMonth() / 3)] += amount / (1 + kdvRate);
             };
             state.filamentLogs.forEach(l => { if (l.faturali) addQGider(l.date, l.pr); });
             state.accessoryLogs.forEach(l => { if (l.faturali) addQGider(l.date, l.price); });
             state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addQGider(t.date, t.amount); });
+            state.productStockLogs.forEach(l => { if (l.total && l.faturali) addQGider(l.date, l.total); });
 
             const qNet = qGelir.map((g, i) => Math.max(0, g - qGider[i]));
             const geciciVergi = qNet.map(q => q > 0 ? q * taxRateFor(q) / 100 : 0);
@@ -2172,619 +2559,483 @@
         }
 
         // ====
-        //  TAB 7: RAPORLAR
+        //  FIRE / ATIK TAKİBİ (normal fire maliyete dahildir)
         // ====
-        function renderReports() {
-            $('rep-year').innerText = currentYear;
-            const rows = monthlyReport();
-            $('ui-monthly-report').innerHTML = rows.map(r => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-2 font-semibold">${r.month}</td>
-                    <td class="p-2 text-right text-emerald-600 font-semibold">${fmt(r.gelir)}</td>
-                    <td class="p-2 text-right text-rose-600 font-semibold">${fmt(r.gider)}</td>
-                    <td class="p-2 text-right font-bold ${r.net >= 0 ? 'text-slate-800' : 'text-rose-600'}">${fmt(r.net)}</td>
-                </tr>`).join('');
+        function addWaste(e) {
+            e.preventDefault();
+            const gr = parseFloat($('inp-waste-gr').value);
+            const reason = $('inp-waste-reason').value || 'Diğer';
+            const note = $('inp-waste-note').value.trim();
+            const dateVal = $('inp-waste-date').value || todayStr();
+            if (!(gr > 0)) return alert('Geçerli bir gram değeri girin.');
+            if (gr > (state.filament.totalGr || 0)) return alert('Stokta ' + fmtN(state.filament.totalGr) + ' gr filament var. Bundan fazlası fire olarak yazılamaz.');
+            const avg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+            // Fire: gram düşülür, toplam maliyet sabit kalır → ortalama gram fiyatı yükselir,
+            // fire maliyeti gelecekteki üretimlerin maliyetine otomatik yansır.
+            state.filament.totalGr -= gr;
+            state.wasteLogs.push({ id: 'WST' + Date.now(), gr, reason, note, avgAtTime: avg, value: gr * avg, date: new Date(dateVal + 'T12:00:00').toISOString() });
+            saveState(); renderAll();
+            e.target.reset();
+            $('inp-waste-date').value = todayStr();
+        }
 
-            $('ui-dealer-report').innerHTML = state.dealers.map(d => {
-                const dOrds = state.orders.filter(o => o.locId === d.id);
-                const vol = dOrds.reduce((s, o) => s + o.total, 0);
-                const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + o.total, 0);
-                return `<tr class="hover:bg-slate-50">
-                    <td class="p-2 font-semibold">${esc(d.name)}</td>
-                    <td class="p-2 text-center">${dOrds.length}</td>
-                    <td class="p-2 text-right text-sky-700 font-semibold">${fmt(vol)}</td>
-                    <td class="p-2 text-right ${alacak > 0 ? 'text-purple-700 font-semibold' : 'text-slate-400'}">${fmt(alacak)}</td>
-                </tr>`;
-            }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Bayi yok.</td></tr>';
+        function deleteWaste(id) {
+            const l = (state.wasteLogs || []).find(x => x.id === id);
+            if (!l) return;
+            askConfirm('Bu fire kaydı silinecek ve ' + fmtN(l.gr) + ' gr stoğa geri eklenecek. Emin misiniz?', () => {
+                state.filament.totalGr += l.gr;
+                state.wasteLogs = state.wasteLogs.filter(x => x.id !== id);
+                saveState(); renderAll();
+            });
+        }
 
+        function renderWasteBox() {
+            const logs = state.wasteLogs || [];
+            const now = new Date();
+            const mStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+            const yStart = new Date(now.getFullYear(), 0, 1).getTime();
+            const sumW = from => logs.filter(l => new Date(l.date).getTime() >= from).reduce((a, l) => ({ gr: a.gr + (l.gr || 0), val: a.val + (l.value || 0) }), { gr: 0, val: 0 });
+            const mw = sumW(mStart), yw = sumW(yStart), aw = sumW(0);
+            if ($('ui-waste-month-gr')) {
+                $('ui-waste-month-gr').innerText = fmtN(mw.gr) + ' gr';
+                $('ui-waste-month-val').innerText = fmt(mw.val);
+                $('ui-waste-year-gr').innerText = fmtN(yw.gr) + ' gr';
+                $('ui-waste-year-val').innerText = fmt(yw.val);
+                $('ui-waste-all-gr').innerText = fmtN(aw.gr) + ' gr';
+                $('ui-waste-all-val').innerText = fmt(aw.val);
+            }
+            if ($('ui-waste-avg-hint')) {
+                const avg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
+                $('ui-waste-avg-hint').innerText = 'Mevcut ortalama: ' + avg.toFixed(3) + ' ₺/gr · Stok: ' + fmtN(state.filament.totalGr) + ' gr';
+            }
+            const byReason = {};
+            logs.forEach(l => { const r = l.reason || 'Diğer'; if (!byReason[r]) byReason[r] = { n: 0, gr: 0, val: 0 }; byReason[r].n++; byReason[r].gr += (l.gr || 0); byReason[r].val += (l.value || 0); });
+            if ($('ui-waste-reasons')) {
+                $('ui-waste-reasons').innerHTML = Object.entries(byReason).sort((a, b) => b[1].gr - a[1].gr).map(([r, v]) =>
+                    `<tr><td class="p-2 font-medium">${esc(r)}</td><td class="p-2 text-center">${v.n}</td><td class="p-2 text-right font-bold text-rose-700">${fmtN(v.gr)} gr</td><td class="p-2 text-right">${fmt(v.val)}</td></tr>`
+                ).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Henüz fire kaydı yok.</td></tr>';
+            }
+            if ($('ui-waste-recent')) {
+                $('ui-waste-recent').innerHTML = [...logs].reverse().slice(0, 6).map(l =>
+                    `<div class="flex justify-between items-center text-xs border border-slate-100 bg-slate-50 rounded p-2">
+                        <span><b class="text-rose-700">${fmtN(l.gr)} gr</b> · ${esc(l.reason || 'Diğer')}${l.note ? ' — ' + esc(l.note) : ''} <span class="text-slate-400">(${new Date(l.date).toLocaleDateString('tr-TR')} · ${fmt(l.value || 0)})</span></span>
+                        <button onclick="deleteWaste('${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-bold">Geri Al</button>
+                    </div>`
+                ).join('') || '<p class="text-xs text-slate-400 text-center py-2">Henüz fire kaydı yok.</p>';
+            }
+            const wd = $('inp-waste-date');
+            if (wd && !wd.value) wd.value = todayStr();
+        }
+
+        // ====
+        //  HEDİYE FİŞİ (ciroya ve KDV'ye yansımaz, stok düşer)
+        // ====
+        function openGiftModal() {
+            if (!posCart.length) return alert('Sepet boş. Önce hediye edilecek ürünleri sepete ekleyin.');
+            for (const c of posCart) {
+                const m = state.models.find(x => x.id === c.mId);
+                if (!m) return alert('Sepette geçersiz ürün var.');
+                if ((m.ptype || 'uretilen') !== 'hizmet' && (m.stock || 0) < c.qty)
+                    return alert(m.name + ' için ürün stoğu yetersiz. Mevcut: ' + (m.stock || 0));
+            }
+            $('m-gift-to').value = '';
+            $('m-gift-note').value = '';
+            $('gift-cart-summary').innerHTML = posCart.map(c => {
+                const m = state.models.find(x => x.id === c.mId);
+                return `<div class="flex justify-between text-sm border-b border-slate-100 py-1"><span>${c.qty}x ${esc(m.name)}</span><span class="text-slate-500">maliyet: ${fmt(productCost(m) * c.qty)}</span></div>`;
+            }).join('');
+            openModal('modal-gift');
+        }
+
+        function submitGiftOrder() {
+            const to = $('m-gift-to').value.trim();
+            const note = $('m-gift-note').value.trim();
+            if (!to) return alert('Hediyenin verildiği kişi/kurumu yazın.');
+            for (const c of posCart) {
+                const m = state.models.find(x => x.id === c.mId);
+                if (!m) return alert('Sepette geçersiz ürün var.');
+                if ((m.ptype || 'uretilen') !== 'hizmet' && (m.stock || 0) < c.qty)
+                    return alert(m.name + ' için stok yetersiz.');
+            }
+            // Maliyetleri stok düşümünden ÖNCE hesapla
+            const items = posCart.map(c => {
+                const m = state.models.find(x => x.id === c.mId);
+                const qty = parseFloat(c.qty) || 0;
+                return { mId: m.id, name: m.name, qty, cost: productCost(m) * qty };
+            });
             const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
-            $('ui-product-report').innerHTML = state.models.map(m => {
-                let sold = 0, ciro = 0;
-                // Raporlar sipariş anındaki birim fiyatı (unitPrice) esas alır; ürünün güncel fiyatı değişse bile geçmiş doğru kalır.
-                state.orders.forEach(o => {
-                    (o.items || []).forEach(i => {
-                        if (i.mId === m.id) {
-                            sold += i.qty;
-                            ciro += i.qty * (i.unitPrice ?? m.price);
+            items.forEach(it => {
+                const m = state.models.find(x => x.id === it.mId);
+                const ptype = m.ptype || 'uretilen';
+                if (ptype !== 'hizmet') m.stock = (m.stock || 0) - it.qty;
+                if (ptype === 'uretilen') {
+                    const usedFil = (m.filGr || 0) * it.qty;
+                    state.filament.totalGr -= usedFil;
+                    state.filament.totalCost -= (usedFil * filAvg);
+                    (m.recipe || []).forEach(r => {
+                        const acc = state.accessories.find(a => a.id === r.id);
+                        if (acc && acc.qty > 0) {
+                            const aAvg = acc.totalCost / acc.qty;
+                            const used = r.qty * it.qty;
+                            acc.qty -= used;
+                            acc.totalCost -= (used * aAvg);
                         }
                     });
-                });
-                let mC = m.filGr * filAvg;
-                (m.recipe || []).forEach(r => { const a = state.accessories.find(x => x.id === r.id); if (a && a.qty > 0) mC += (r.qty * (a.totalCost / a.qty)); });
-                let karToplam = 0;
-                state.orders.forEach(o => {
-                    (o.items || []).forEach(i => {
-                        if (i.mId === m.id) karToplam += i.qty * ((i.unitPrice ?? m.price) - mC);
-                    });
-                });
-                return `<tr class="hover:bg-slate-50">
-                    <td class="p-2 font-semibold">${esc(m.name)}</td>
-                    <td class="p-2 text-center">${sold}</td>
-                    <td class="p-2 text-right text-sky-700 font-semibold">${fmt(ciro)}</td>
-                    <td class="p-2 text-right ${karToplam >= 0 ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}">${fmt(karToplam)}</td>
-                </tr>`;
-            }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Ürün yok.</td></tr>';
+                }
+            });
+            state.giftLogs.push({ id: 'GFT' + Date.now(), date: new Date().toISOString(), to, note, items, totalCost: items.reduce((s, i) => s + i.cost, 0) });
+            posCart = [];
+            saveState(); renderAll();
+            closeModal('modal-gift');
+            closeModal('modal-pos');
         }
 
-        function monthlyReport() {
-            const rows = [];
-            for (let m = 0; m < 12; m++) {
-                let gelir = 0, gider = 0;
-                state.orders.forEach(o => {
-                    if (o.status === 'delivered' && o.paymentStatus === 'paid') {
-                        const d = new Date(o.deliveryDate || o.date);
-                        if (d.getFullYear() === currentYear && d.getMonth() === m) gelir += o.total;
-                    }
-                });
-                state.transactions.forEach(t => {
-                    const d = new Date(t.date);
-                    if (d.getFullYear() === currentYear && d.getMonth() === m) { if (t.type === 'in') gelir += t.amount; else gider += t.amount; }
-                });
-                state.filamentLogs.forEach(l => { const d = new Date(l.date); if (d.getFullYear() === currentYear && d.getMonth() === m) gider += l.pr; });
-                state.accessoryLogs.forEach(l => { const d = new Date(l.date); if (d.getFullYear() === currentYear && d.getMonth() === m) gider += (l.total ?? l.price ?? 0); });
-                rows.push({ month: MONTHS[m], gelir, gider, net: gelir - gider });
+        // ====
+        //  RAPORLAR
+        // ====
+        function monthlyPL() {
+            const gelir = Array(12).fill(0), gider = Array(12).fill(0);
+            state.orders.forEach(o => {
+                if (o.status === 'delivered') {
+                    const d = new Date(o.deliveryDate || o.date);
+                    if (d.getFullYear() === currentYear) gelir[d.getMonth()] += (o.matrah || 0);
+                }
+            });
+            const addExp = (date, amt) => { const d = new Date(date); if (d.getFullYear() === currentYear) gider[d.getMonth()] += amt; };
+            state.filamentLogs.forEach(l => addExp(l.date, l.matrah != null ? l.matrah : (l.pr || 0)));
+            state.accessoryLogs.forEach(l => addExp(l.date, l.matrah != null ? l.matrah : (l.total || l.price || 0)));
+            state.transactions.forEach(t => { if (t.type === 'out') addExp(t.date, t.faturali ? kdvBreakdown(t.amount || 0).matrah : (t.amount || 0)); });
+            state.productStockLogs.forEach(l => { if (l.total) addExp(l.date, l.matrah != null ? l.matrah : (l.faturali ? kdvBreakdown(l.total).matrah : l.total)); });
+            const s = state.settings;
+            const yearlyFixed = (s.musavir * 12) + (s.kdvDamga * 12) + (s.muhtasarDamga * 12) + (s.geciciDamga * 4);
+            let yearlyAst = 0;
+            state.assets.forEach(a => yearlyAst += (a.price || 0) / (a.years || 1));
+            for (let i = 0; i < 12; i++) gider[i] += yearlyFixed / 12 + yearlyAst / 12;
+            return { gelir, gider };
+        }
+
+        function renderReports() {
+            renderWasteBox();
+            $('rep-year').innerText = currentYear;
+
+            // Aylık Kâr / Zarar
+            const { gelir, gider } = monthlyPL();
+            let tG = 0, tGd = 0, rows = '';
+            for (let i = 0; i < 12; i++) {
+                const net = gelir[i] - gider[i]; tG += gelir[i]; tGd += gider[i];
+                rows += `<tr><td class="p-2 font-medium">${MONTHS[i]}</td><td class="p-2 text-right">${fmt(gelir[i])}</td><td class="p-2 text-right">${fmt(gider[i])}</td><td class="p-2 text-right font-bold ${net < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmt(net)}</td></tr>`;
             }
-            return rows;
+            rows += `<tr class="bg-slate-100 font-bold"><td class="p-2">TOPLAM</td><td class="p-2 text-right">${fmt(tG)}</td><td class="p-2 text-right">${fmt(tGd)}</td><td class="p-2 text-right ${tG - tGd < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmt(tG - tGd)}</td></tr>`;
+            $('ui-monthly-report').innerHTML = rows;
+
+            // Bayi performansı
+            $('ui-dealer-report').innerHTML = state.dealers.map(d => {
+                const dOrds = state.orders.filter(o => o.locId === d.id);
+                const ciro = dOrds.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.total || 0), 0);
+                const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + (o.total || 0), 0);
+                return `<tr><td class="p-2 font-medium">${esc(d.name)}</td><td class="p-2 text-center">${dOrds.length}</td><td class="p-2 text-right">${fmt(ciro)}</td><td class="p-2 text-right ${alacak > 0 ? 'text-purple-700 font-bold' : ''}">${fmt(alacak)}</td></tr>`;
+            }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Bayi yok.</td></tr>';
+
+            // Ürün performansı
+            const prodAgg = {};
+            state.orders.forEach(o => {
+                if (o.status !== 'delivered') return;
+                (o.items || []).forEach(it => {
+                    const m = state.models.find(x => x.id === it.mId);
+                    if (!m) return;
+                    if (!prodAgg[m.id]) prodAgg[m.id] = { m, qty: 0, ciro: 0, maliyet: 0 };
+                    const q = parseFloat(it.qty) || 0, up = it.unitPrice != null ? it.unitPrice : (m.price || 0);
+                    prodAgg[m.id].qty += q; prodAgg[m.id].ciro += q * up; prodAgg[m.id].maliyet += q * productCost(m);
+                });
+            });
+            $('ui-product-report').innerHTML = state.models.map(m => prodAgg[m.id] || { m, qty: 0, ciro: 0, maliyet: 0 })
+                .sort((a, b) => b.ciro - a.ciro)
+                .map(a => { const kar = a.ciro - a.maliyet; return `<tr><td class="p-2 font-medium">${esc(a.m.name)} <span class="text-[10px] text-slate-400">${PTYPE_LABELS[a.m.ptype || 'uretilen'] || ''}</span></td><td class="p-2 text-center">${fmtN(a.qty)}</td><td class="p-2 text-right">${fmt(a.ciro)}</td><td class="p-2 text-right font-bold ${kar < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmt(kar)}</td></tr>`; }).join('')
+                || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Ürün yok.</td></tr>';
+
+            // Kategori bazlı satış
+            const catAgg = {};
+            Object.values(prodAgg).forEach(a => {
+                const c = a.m.category || 'Diğer';
+                if (!catAgg[c]) catAgg[c] = { qty: 0, ciro: 0, maliyet: 0 };
+                catAgg[c].qty += a.qty; catAgg[c].ciro += a.ciro; catAgg[c].maliyet += a.maliyet;
+            });
+            $('ui-category-report').innerHTML = Object.entries(catAgg).sort((a, b) => b[1].ciro - a[1].ciro).map(([c, v]) => {
+                const kar = v.ciro - v.maliyet;
+                return `<tr><td class="p-2 font-medium">${esc(c)}</td><td class="p-2 text-center">${fmtN(v.qty)}</td><td class="p-2 text-right">${fmt(v.ciro)}</td><td class="p-2 text-right font-bold ${kar < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmt(kar)}</td></tr>`;
+            }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Henüz teslim edilmiş sipariş yok.</td></tr>';
+
+            // Hediye tablosu
+            const gifts = [...(state.giftLogs || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+            $('ui-gift-report').innerHTML = gifts.map(g => `
+                <tr>
+                    <td class="p-2">${new Date(g.date).toLocaleDateString('tr-TR')}</td>
+                    <td class="p-2 font-medium">${esc(g.to || '-')}</td>
+                    <td class="p-2">${esc((g.items || []).map(i => i.qty + 'x ' + (i.name || '')).join(', '))}</td>
+                    <td class="p-2 text-center">${fmtN((g.items || []).reduce((s, i) => s + (i.qty || 0), 0))}</td>
+                    <td class="p-2 text-right font-bold text-purple-700">${fmt(g.totalCost || 0)}</td>
+                    <td class="p-2">${esc(g.note || '')}</td>
+                    <td class="p-2 text-center"><button onclick="deleteLog('gift','${g.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td>
+                </tr>`).join('') || '<tr><td colspan="7" class="p-4 text-center text-slate-400">Henüz hediye kaydı yok.</td></tr>';
         }
 
-        // --- CSV Dışa Aktarma ---
-        function exportCSV(filename, headers, rows) {
-            const escC = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-            const csv = [headers.map(escC).join(';'), ...rows.map(r => r.map(escC).join(';'))].join('\n');
-            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        // ====
+        //  CSV DIŞA AKTARIM
+        // ====
+        function csvDownload(fname, rows) {
+            const csv = '\uFEFF' + rows.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(a.href);
+            a.download = fname;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         }
 
         function exportMonthlyCSV() {
-            const rows = monthlyReport().map(r => [r.month, r.gelir.toFixed(2), r.gider.toFixed(2), r.net.toFixed(2)]);
-            exportCSV('aylik_kar_zarar_' + currentYear + '.csv', ['Ay', 'Gelir (TL)', 'Gider (TL)', 'Net (TL)'], rows);
+            const { gelir, gider } = monthlyPL();
+            const rows = [['Ay', 'Gelir (₺)', 'Gider (₺)', 'Net (₺)']];
+            let tG = 0, tGd = 0;
+            for (let i = 0; i < 12; i++) {
+                const net = gelir[i] - gider[i]; tG += gelir[i]; tGd += gider[i];
+                rows.push([MONTHS[i] + ' ' + currentYear, gelir[i].toFixed(2).replace('.', ','), gider[i].toFixed(2).replace('.', ','), net.toFixed(2).replace('.', ',')]);
+            }
+            rows.push(['TOPLAM', tG.toFixed(2).replace('.', ','), tGd.toFixed(2).replace('.', ','), (tG - tGd).toFixed(2).replace('.', ',')]);
+            csvDownload('aylik_rapor_' + currentYear + '.csv', rows);
         }
 
         function exportDealerCSV() {
-            const rows = state.dealers.map(d => {
+            const rows = [['Bayi / Platform', 'Kategori', 'Sipariş Sayısı', 'Ciro (₺)', 'Bekleyen Alacak (₺)']];
+            state.dealers.forEach(d => {
                 const dOrds = state.orders.filter(o => o.locId === d.id);
-                const vol = dOrds.reduce((s, o) => s + o.total, 0);
-                const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + o.total, 0);
-                return [d.name, d.category || d.type, dOrds.length, vol.toFixed(2), alacak.toFixed(2)];
+                const ciro = dOrds.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.total || 0), 0);
+                const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + (o.total || 0), 0);
+                rows.push([d.name, d.category || d.type || '', dOrds.length, ciro.toFixed(2).replace('.', ','), alacak.toFixed(2).replace('.', ',')]);
             });
-            exportCSV('bayi_raporu.csv', ['Bayi', 'Kategori', 'Sipariş Sayısı', 'Ciro (TL)', 'Alacak (TL)'], rows);
+            csvDownload('bayi_raporu.csv', rows);
         }
 
         function exportProductCSV() {
-            const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
-            const rows = state.models.map(m => {
-                let sold = 0, ciro = 0, kar = 0;
-                let mC = m.filGr * filAvg;
-                (m.recipe || []).forEach(r => { const a = state.accessories.find(x => x.id === r.id); if (a && a.qty > 0) mC += (r.qty * (a.totalCost / a.qty)); });
+            const rows = [['Ürün', 'Tür', 'Kategori', 'Satılan Adet', 'Ciro (₺)', 'Tahmini Maliyet (₺)', 'Tahmini Kâr (₺)']];
+            state.models.forEach(m => {
+                let qty = 0, ciro = 0, maliyet = 0;
                 state.orders.forEach(o => {
-                    (o.items || []).forEach(i => {
-                        if (i.mId === m.id) {
-                            const unit = i.unitPrice ?? m.price;
-                            sold += i.qty;
-                            ciro += i.qty * unit;
-                            kar += i.qty * (unit - mC);
-                        }
+                    if (o.status !== 'delivered') return;
+                    (o.items || []).forEach(it => {
+                        if (it.mId !== m.id) return;
+                        const q = parseFloat(it.qty) || 0, up = it.unitPrice != null ? it.unitPrice : (m.price || 0);
+                        qty += q; ciro += q * up; maliyet += q * productCost(m);
                     });
                 });
-                return [m.name, sold, ciro.toFixed(2), kar.toFixed(2)];
+                rows.push([m.name, PTYPE_LABELS[m.ptype || 'uretilen'] || '', m.category || 'Diğer', qty, ciro.toFixed(2).replace('.', ','), maliyet.toFixed(2).replace('.', ','), (ciro - maliyet).toFixed(2).replace('.', ',')]);
             });
-            exportCSV('urun_raporu.csv', ['Ürün', 'Satılan Adet', 'Ciro (TL)', 'Tahmini Kâr (TL)'], rows);
+            csvDownload('urun_raporu.csv', rows);
+        }
+
+        function exportGiftCSV() {
+            const rows = [['Tarih', 'Verilen Kişi / Kurum', 'Ürünler', 'Toplam Adet', 'Maliyet Değeri (₺)', 'Not']];
+            [...(state.giftLogs || [])].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(g => {
+                rows.push([
+                    new Date(g.date).toLocaleDateString('tr-TR'), g.to || '',
+                    (g.items || []).map(i => i.qty + 'x ' + (i.name || '')).join(' | '),
+                    (g.items || []).reduce((s, i) => s + (i.qty || 0), 0),
+                    (g.totalCost || 0).toFixed(2).replace('.', ','), g.note || ''
+                ]);
+            });
+            csvDownload('hediye_raporu.csv', rows);
         }
 
         // ====
-        //  STOK GEÇMİŞLERİ (Aksesuar / Ürün)
+        //  GEÇMİŞ PENCERELERİ & KAYIT SİLME
         // ====
-        function openAccessoryHistory(accId) {
-            currentHistoryType = 'accessoryById:' + accId;
-            const acc = state.accessories.find(a => a.id === accId);
-            const logs = [...state.accessoryLogs].filter(l => l.accId === accId).reverse();
-            $('hist-title').innerHTML = `<i class="ph-fill ph-link"></i> ${esc(acc ? acc.name : 'Aksesuar')} Stok Geçmişi`;
-            $('hist-thead').innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Adet</th><th class="p-3">Birim</th><th class="p-3">Matrah</th><th class="p-3">KDV</th><th class="p-3">Toplam</th><th class="p-3">Not</th><th class="p-3">İşlem</th></tr>';
-            $('hist-tbody').innerHTML = logs.map(l => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
-                    <td class="p-3 font-semibold">${l.qty}</td>
-                    <td class="p-3">${(l.unitPrice || 0).toFixed(2)} ₺</td>
-                    <td class="p-3">${fmt(l.faturali ? (l.matrah || 0) : (l.total || 0))}</td>
-                    <td class="p-3">${fmt(l.faturali ? (l.kdv || 0) : 0)}</td>
-                    <td class="p-3 font-bold text-purple-700">${fmt(l.total || 0)}</td>
-                    <td class="p-3">${esc(l.note || '-')}</td>
-                    <td class="p-3"><button onclick="openEditModal('accessoryLog', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu kayıt silinecek ve stok geri alınacak. Emin misiniz?', ()=>deleteLog('accessory', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
-                </tr>`).join('') || '<tr><td colspan="8" class="p-4 text-center text-slate-400">Kayıt yok.</td></tr>';
+        function histEmpty(n) { return '<tr><td colspan="' + n + '" class="p-4 text-center text-slate-400">Kayıt yok.</td></tr>'; }
+
+        function openHistory(type) {
+            currentHistoryType = type;
+            const titles = { sales: 'Satış / Sipariş Geçmişi', filament: 'Filament Alım Geçmişi', accessory: 'Aksesuar Alım Geçmişi', expense: 'Gider Geçmişi' };
+            $('hist-title').innerText = titles[type] || 'Geçmiş Kayıtlar';
+            let head = '', rows = '';
+            if (type === 'sales') {
+                head = '<tr><th class="p-2">Tarih</th><th class="p-2">Müşteri / Bayi</th><th class="p-2">Ürünler</th><th class="p-2 text-right">Tutar</th><th class="p-2">Fatura</th><th class="p-2">Durum</th><th class="p-2 text-center">İşlem</th></tr>';
+                rows = [...state.orders].sort((a, b) => new Date(b.date) - new Date(a.date)).map(o => {
+                    const d = state.dealers.find(x => x.id === o.locId);
+                    const items = (o.items || []).map(i => { const m = state.models.find(x => x.id === i.mId); return (i.qty || 0) + 'x ' + (m ? m.name : '?'); }).join(', ');
+                    const st = o.status === 'pending' ? 'Bekliyor' : (o.paymentStatus === 'paid' ? 'Teslim / Tahsil Edildi' : 'Teslim / Alacak');
+                    return `<tr><td class="p-2">${new Date(o.date).toLocaleDateString('tr-TR')}</td><td class="p-2 font-medium">${esc(d ? d.name : '?')}</td><td class="p-2">${esc(items)}</td><td class="p-2 text-right">${fmt(o.total)}</td><td class="p-2">${o.type ? esc(o.type) + (o.invoiceNo ? ' #' + esc(o.invoiceNo) : '') : '-'}</td><td class="p-2">${st}</td><td class="p-2 text-center"><button onclick="deleteLog('sales','${o.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`;
+                }).join('');
+            } else if (type === 'filament') {
+                head = '<tr><th class="p-2">Tarih</th><th class="p-2 text-right">Gram</th><th class="p-2 text-right">Tutar</th><th class="p-2">Fatura</th><th class="p-2 text-right">Matrah</th><th class="p-2 text-right">KDV</th><th class="p-2 text-center">İşlem</th></tr>';
+                rows = [...state.filamentLogs].sort((a, b) => new Date(b.date) - new Date(a.date)).map(l =>
+                    `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 text-right font-bold text-sky-700">+${fmtN(l.gr)} gr</td><td class="p-2 text-right">${fmt(l.pr || 0)}</td><td class="p-2">${l.faturali ? 'Faturalı' : 'Faturasız'}</td><td class="p-2 text-right">${fmt(l.matrah != null ? l.matrah : (l.pr || 0))}</td><td class="p-2 text-right">${fmt(l.kdv || 0)}</td><td class="p-2 text-center"><button onclick="deleteLog('filament','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`
+                ).join('');
+            } else if (type === 'accessory') {
+                head = '<tr><th class="p-2">Tarih</th><th class="p-2">Aksesuar</th><th class="p-2 text-center">Adet</th><th class="p-2 text-right">Tutar</th><th class="p-2">Fatura</th><th class="p-2">Not</th><th class="p-2 text-center">İşlem</th></tr>';
+                rows = [...state.accessoryLogs].sort((a, b) => new Date(b.date) - new Date(a.date)).map(l =>
+                    `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 font-medium">${esc(l.name || '-')}</td><td class="p-2 text-center font-bold text-purple-700">+${l.qty}</td><td class="p-2 text-right">${fmt(l.total != null ? l.total : (l.price || 0))}</td><td class="p-2">${l.faturali ? 'Faturalı' : 'Faturasız'}</td><td class="p-2">${esc(l.note || '')}</td><td class="p-2 text-center"><button onclick="deleteLog('accessory','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`
+                ).join('');
+            } else if (type === 'expense') {
+                head = '<tr><th class="p-2">Tarih</th><th class="p-2">Açıklama</th><th class="p-2 text-right">Tutar</th><th class="p-2">Fatura</th><th class="p-2 text-center">İşlem</th></tr>';
+                rows = state.transactions.filter(t => t.type === 'out').sort((a, b) => new Date(b.date) - new Date(a.date)).map(t =>
+                    `<tr><td class="p-2">${new Date(t.date).toLocaleDateString('tr-TR')}</td><td class="p-2">${esc(t.desc)}</td><td class="p-2 text-right font-bold text-rose-600">-${fmt(t.amount)}</td><td class="p-2">${t.faturali ? 'Faturalı' : 'Faturasız'}</td><td class="p-2 text-center"><button onclick="deleteLog('expense','${t.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`
+                ).join('');
+            }
+            $('hist-thead').innerHTML = head;
+            $('hist-tbody').innerHTML = rows || histEmpty(7);
             openModal('modal-history');
         }
 
         function openProductHistory(prodId) {
-            currentHistoryType = 'productById:' + prodId;
-            const p = state.models.find(m => m.id === prodId);
-            const logs = [...state.productStockLogs].filter(l => l.productId === prodId).reverse();
-            $('hist-title').innerHTML = `<i class="ph-fill ph-package"></i> ${esc(p ? p.name : 'Ürün')} Stok Geçmişi`;
-            $('hist-thead').innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Adet</th><th class="p-3">Not</th><th class="p-3">İşlem</th></tr>';
-            $('hist-tbody').innerHTML = logs.map(l => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
-                    <td class="p-3 font-semibold">${l.qty}</td>
-                    <td class="p-3">${esc(l.note || '-')}</td>
-                    <td class="p-3"><button onclick="openEditModal('productStock', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu kayıt silinecek, ürün ve hammadde stokları geri alınacak. Emin misiniz?', ()=>deleteLog('productStock', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
-                </tr>`).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Kayıt yok.</td></tr>';
+            const m = state.models.find(x => x.id === prodId);
+            if (!m) return;
+            $('hist-title').innerText = 'Stok Geçmişi: ' + m.name;
+            $('hist-thead').innerHTML = '<tr><th class="p-2">Tarih</th><th class="p-2 text-center">Adet</th><th class="p-2 text-right">Birim Alış</th><th class="p-2 text-right">Toplam</th><th class="p-2">Fatura</th><th class="p-2">Not</th><th class="p-2 text-center">İşlem</th></tr>';
+            const logs = state.productStockLogs.filter(l => l.productId === prodId).sort((a, b) => new Date(b.date) - new Date(a.date));
+            $('hist-tbody').innerHTML = logs.map(l =>
+                `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 text-center font-bold text-emerald-700">+${l.qty}</td><td class="p-2 text-right">${l.unitCost != null ? l.unitCost.toFixed(2) + ' ₺' : '-'}</td><td class="p-2 text-right">${l.total != null ? fmt(l.total) : '-'}</td><td class="p-2">${l.faturali ? 'Faturalı' : (l.unitCost != null ? 'Faturasız' : '-')}</td><td class="p-2">${esc(l.note || '')}</td><td class="p-2 text-center"><button onclick="deleteLog('productStock','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`
+            ).join('') || histEmpty(7);
             openModal('modal-history');
         }
 
-        // ====
-        //  GEÇMİŞ LİSTESİ
-        // ====
-        function openHistory(type) {
-            if (String(type).startsWith('accessoryById:')) return openAccessoryHistory(type.split(':')[1]);
-            if (String(type).startsWith('productById:')) return openProductHistory(type.split(':')[1]);
-            currentHistoryType = type;
-            const title = $('hist-title');
-            const thead = $('hist-thead');
-            const tbody = $('hist-tbody');
-
-            if (type === 'filament') {
-                title.innerHTML = '<i class="ph-fill ph-spinner-gap"></i> Filament Alım Geçmişi';
-                thead.innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Miktar</th><th class="p-3">Matrah</th><th class="p-3">KDV</th><th class="p-3">Toplam</th><th class="p-3">Fatura</th><th class="p-3">İşlem</th></tr>';
-                tbody.innerHTML = [...state.filamentLogs].reverse().map(l => `
-                    <tr class="hover:bg-slate-50">
-                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
-                    <td class="p-3 font-semibold">${l.gr} gr</td>
-                    <td class="p-3">${fmt(l.faturali ? (l.matrah || 0) : (l.pr || 0))}</td>
-                    <td class="p-3">${fmt(l.faturali ? (l.kdv || 0) : 0)}</td>
-                    <td class="p-3 text-sky-700 font-bold">${fmt(l.pr || 0)}</td>
-                    <td class="p-3">${l.faturali ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Faturalı</span>' : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Faturasız</span>'}</td>
-                    <td class="p-3"><button onclick="openEditModal('filament', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu kayıt silinecek ve stok geri alınacak. Emin misiniz?', ()=>deleteLog('filament', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
-                    </tr>`).join('') || '<tr><td colspan="7" class="p-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
-            } else if (type === 'accessory') {
-                title.innerHTML = '<i class="ph-fill ph-link"></i> Aksesuar Alım Geçmişi';
-                thead.innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Aksesuar</th><th class="p-3">Adet</th><th class="p-3">Matrah</th><th class="p-3">KDV</th><th class="p-3">Toplam</th><th class="p-3">Fatura</th><th class="p-3">İşlem</th></tr>';
-                tbody.innerHTML = [...state.accessoryLogs].reverse().map(l => `
-                    <tr class="hover:bg-slate-50">
-                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
-                    <td class="p-3">${esc(l.name)}</td>
-                    <td class="p-3 font-semibold">${l.qty}</td>
-                    <td class="p-3">${fmt(l.faturali ? (l.matrah || 0) : (l.total || 0))}</td>
-                    <td class="p-3">${fmt(l.faturali ? (l.kdv || 0) : 0)}</td>
-                    <td class="p-3 text-purple-700 font-bold">${fmt(l.total || 0)}</td>
-                    <td class="p-3">${l.faturali ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Faturalı</span>' : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Faturasız</span>'}</td>
-                    <td class="p-3"><button onclick="openEditModal('accessoryLog', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu kayıt silinecek ve stok geri alınacak. Emin misiniz?', ()=>deleteLog('accessory', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
-                    </tr>`).join('') || '<tr><td colspan="8" class="p-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
-            } else if (type === 'expense') {
-                title.innerHTML = '<i class="ph-bold ph-receipt"></i> Gider ve Harcama Geçmişi';
-                thead.innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Açıklama</th><th class="p-3">Tutar</th><th class="p-3">Fatura</th><th class="p-3">İşlem</th></tr>';
-                tbody.innerHTML = [...state.transactions].reverse().filter(t => t.type === 'out').map(l => `
-                    <tr class="hover:bg-slate-50">
-                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
-                    <td class="p-3">${esc(l.desc)}</td>
-                    <td class="p-3 text-rose-600 font-bold">${l.amount.toFixed(2)} ₺</td>
-                    <td class="p-3">${l.faturali ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Faturalı</span>' : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Faturasız</span>'}</td>
-                    <td class="p-3"><button onclick="openEditModal('expense', '${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu gider silinecek. Emin misiniz?', ()=>deleteLog('expense', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
-                    </tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
-            } else if (type === 'sales') {
-                title.innerHTML = '<i class="ph-bold ph-shopping-bag"></i> Sipariş ve Satış Geçmişi';
-                thead.innerHTML = '<tr><th class="p-3">Tarih</th><th class="p-3">Bayi/Platform</th><th class="p-3">Tutar</th><th class="p-3">Fatura Türü</th><th class="p-3">Tahsilat</th><th class="p-3">İşlem</th></tr>';
-                tbody.innerHTML = [...state.orders].reverse().map(l => {
-                    const d = state.dealers.find(x => x.id === l.locId);
-                    return `
-                    <tr class="hover:bg-slate-50">
-                    <td class="p-3">${new Date(l.date).toLocaleDateString('tr-TR')}</td>
-                    <td class="p-3">${esc(d ? d.name : 'Bilinmiyor')}</td>
-                    <td class="p-3 text-emerald-600 font-bold">${fmt(l.total || 0)}</td>
-                    <td class="p-3"><span class="px-2 py-1 text-[11px] rounded uppercase font-bold ${l.type === 'faturalı' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${l.type || 'Bekliyor'}</span> ${l.invoiceNo ? ' <span class="text-xs text-slate-500">#' + esc(l.invoiceNo) + '</span>' : ''}</td>
-                    <td class="p-3">${l.status === 'pending' ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Üretimde</span>' : (l.paymentStatus === 'paid' ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Tahsil Edildi</span>' : '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Alacak</span>')}</td>
-                    <td class="p-3"><button onclick="openOrderEditModal('${l.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">Düzenle</button><button onclick="askConfirm('Bu sipariş silinecek ve ürün stoğu geri alınacak. Emin misiniz?', ()=>deleteLog('sales', '${l.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Sil</button></td>
-                    </tr>`;
-                }).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
-            } else {
-                return;
-            }
+        function openAccessoryHistory(accId) {
+            const a = state.accessories.find(x => x.id === accId);
+            if (!a) return;
+            $('hist-title').innerText = 'Alım Geçmişi: ' + a.name;
+            $('hist-thead').innerHTML = '<tr><th class="p-2">Tarih</th><th class="p-2 text-center">Adet</th><th class="p-2 text-right">Birim</th><th class="p-2 text-right">Toplam</th><th class="p-2">Fatura</th><th class="p-2">Not</th><th class="p-2 text-center">İşlem</th></tr>';
+            const logs = state.accessoryLogs.filter(l => l.accId === accId).sort((x, y) => new Date(y.date) - new Date(x.date));
+            $('hist-tbody').innerHTML = logs.map(l =>
+                `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 text-center font-bold text-purple-700">+${l.qty}</td><td class="p-2 text-right">${(l.unitPrice || 0).toFixed(2)} ₺</td><td class="p-2 text-right">${fmt(l.total != null ? l.total : (l.price || 0))}</td><td class="p-2">${l.faturali ? 'Faturalı' : 'Faturasız'}</td><td class="p-2">${esc(l.note || '')}</td><td class="p-2 text-center"><button onclick="deleteLog('accessory','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`
+            ).join('') || histEmpty(7);
             openModal('modal-history');
         }
 
         function deleteLog(type, id) {
-            if (type === 'filament') {
-                const idx = state.filamentLogs.findIndex(x => x.id === id);
-                if (idx > -1) {
-                    state.filament.totalGr -= state.filamentLogs[idx].gr;
-                    state.filament.totalCost -= state.filamentLogs[idx].pr;
-                    state.filamentLogs.splice(idx, 1);
-                }
-            } else if (type === 'accessory') {
-                const idx = state.accessoryLogs.findIndex(x => x.id === id);
-                if (idx > -1) {
-                    const log = state.accessoryLogs[idx];
-                    const acc = state.accessories.find(a => a.id === log.accId);
-                    if (acc) { acc.qty -= (log.qty || 0); acc.totalCost -= (log.total || log.price || 0); }
-                    state.accessoryLogs.splice(idx, 1);
-                }
-            } else if (type === 'productStock') {
-                const idx = state.productStockLogs.findIndex(x => x.id === id);
-                if (idx > -1) {
-                    const log = state.productStockLogs[idx];
-                    const p = state.models.find(m => m.id === log.productId);
-                    if (p) {
-                        p.stock = (p.stock || 0) - (log.qty || 0);
-                        // Üretim iptali: reçeteye göre hammaddeyi stoğa geri ekle
-                        restoreMaterials(p, log.qty || 0);
+            if (type === 'sales') {
+                const o = state.orders.find(x => x.id === id);
+                if (!o) return;
+                askConfirm('Sipariş silinecek ve ürün stoğu geri eklenecek (filament/aksesuar düşümü geri gelmez). Emin misiniz?', () => {
+                    if (o.stockDeducted !== false) {
+                        (o.items || []).forEach(it => {
+                            const m = state.models.find(x => x.id === it.mId);
+                            if (m && (m.ptype || 'uretilen') !== 'hizmet') m.stock = (m.stock || 0) + (parseFloat(it.qty) || 0);
+                        });
                     }
-                    state.productStockLogs.splice(idx, 1);
-                }
+                    state.orders = state.orders.filter(x => x.id !== id);
+                    saveState(); renderAll();
+                });
+            } else if (type === 'filament') {
+                const l = state.filamentLogs.find(x => x.id === id);
+                if (!l) return;
+                askConfirm('Filament alım kaydı silinecek ve stoktan düşülecek. Emin misiniz?', () => {
+                    state.filament.totalGr -= (l.gr || 0);
+                    state.filament.totalCost -= (l.pr || 0);
+                    if (state.filament.totalGr < 0) state.filament.totalGr = 0;
+                    if (state.filament.totalCost < 0) state.filament.totalCost = 0;
+                    state.filamentLogs = state.filamentLogs.filter(x => x.id !== id);
+                    saveState(); renderAll();
+                });
+            } else if (type === 'accessory') {
+                const l = state.accessoryLogs.find(x => x.id === id);
+                if (!l) return;
+                askConfirm('Aksesuar alım kaydı silinecek ve stoktan düşülecek. Emin misiniz?', () => {
+                    const acc = state.accessories.find(a => a.id === l.accId);
+                    if (acc) {
+                        acc.qty -= (l.qty || 0);
+                        acc.totalCost -= (l.total != null ? l.total : (l.price || 0));
+                        if (acc.qty < 0) acc.qty = 0;
+                        if (acc.totalCost < 0) acc.totalCost = 0;
+                    }
+                    state.accessoryLogs = state.accessoryLogs.filter(x => x.id !== id);
+                    saveState(); renderAll();
+                });
             } else if (type === 'expense') {
-                state.transactions = state.transactions.filter(x => x.id !== id);
-            } else if (type === 'sales') {
-                const ord = state.orders.find(x => x.id === id);
-                // Sipariş silinince düşlen ürün stoğu geri alınır (hammadde üretim anında tüketilmişti)
-                if (ord && ord.stockDeducted) {
-                    (ord.items || []).forEach(it => {
-                        const m = state.models.find(mm => mm.id === it.mId);
-                        if (m) m.stock = (m.stock || 0) + (it.qty || 0);
+                askConfirm('Gider kaydı silinecek. Emin misiniz?', () => {
+                    state.transactions = state.transactions.filter(x => x.id !== id);
+                    saveState(); renderAll();
+                });
+            } else if (type === 'productStock') {
+                const l = state.productStockLogs.find(x => x.id === id);
+                if (!l) return;
+                askConfirm('Stok giriş kaydı silinecek ve üründen düşülecek. Emin misiniz?', () => {
+                    const m = state.models.find(x => x.id === l.productId);
+                    if (m) m.stock = Math.max(0, (m.stock || 0) - (l.qty || 0));
+                    state.productStockLogs = state.productStockLogs.filter(x => x.id !== id);
+                    saveState(); renderAll();
+                });
+            } else if (type === 'gift') {
+                const g = (state.giftLogs || []).find(x => x.id === id);
+                if (!g) return;
+                askConfirm('Hediye kaydı silinecek ve ürün stokları geri eklenecek. Emin misiniz?', () => {
+                    (g.items || []).forEach(it => {
+                        const m = state.models.find(x => x.id === it.mId);
+                        if (m && (m.ptype || 'uretilen') !== 'hizmet') m.stock = (m.stock || 0) + (parseFloat(it.qty) || 0);
                     });
-                }
-                state.orders = state.orders.filter(x => x.id !== id);
-            }
-            saveState(); renderAll();
-            if (currentHistoryType) {
-                if (currentHistoryType.startsWith('accessoryById:')) openAccessoryHistory(currentHistoryType.split(':')[1]);
-                else if (currentHistoryType.startsWith('productById:')) openProductHistory(currentHistoryType.split(':')[1]);
-                else openHistory(currentHistoryType);
+                    state.giftLogs = state.giftLogs.filter(x => x.id !== id);
+                    saveState(); renderAll();
+                });
             }
         }
 
         // ====
-        //  DÜZENLEME MODALI (tüm kayıt tipleri)
+        //  KAYIT DÜZENLEME
         // ====
         function openEditModal(type, id) {
             editTarget = { type, id };
-            const el = $('edit-form');
-            const s = state.settings;
-
-            if (type === 'filament') {
-                const l = state.filamentLogs.find(x => x.id === id);
-                if (!l) return;
-                el.innerHTML = `
-                    <div class="space-y-3">
-                    <div><label class="block text-xs font-semibold mb-1">Miktar (gr)</label><input type="number" id="ed-1" value="${l.gr}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Tutar (₺)</label><input type="number" step="0.01" id="ed-2" value="${l.pr}" class="w-full border rounded p-2 text-sm"></div>
-                    <div class="flex items-center gap-2"><input type="checkbox" id="ed-3" class="w-4 h-4 accent-emerald-600" ${l.faturali ? 'checked' : ''}><label for="ed-3" class="text-xs font-semibold text-slate-600">Faturalı Alım</label></div>
-                    </div>`;
-            } else if (type === 'accessoryLog') {
-                const l = state.accessoryLogs.find(x => x.id === id);
-                if (!l) return;
-                el.innerHTML = `
-                    <div class="space-y-3">
-                    <div><label class="block text-xs font-semibold mb-1">Adet</label><input type="number" id="ed-1" value="${l.qty}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Birim Fiyat (₺)</label><input type="number" step="0.01" id="ed-2" value="${(l.unitPrice || 0)}" class="w-full border rounded p-2 text-sm"></div>
-                    <div class="flex items-center gap-2"><input type="checkbox" id="ed-3" class="w-4 h-4 accent-emerald-600" ${l.faturali ? 'checked' : ''}><label for="ed-3" class="text-xs font-semibold text-slate-600">Faturalı Alım</label></div>
-                    <div><label class="block text-xs font-semibold mb-1">Tarih</label><input type="date" id="ed-4" value="${String(l.date || '').slice(0,10)}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Not</label><input type="text" id="ed-5" value="${esc(l.note || '')}" class="w-full border rounded p-2 text-sm"></div>
-                    </div>`;
-            } else if (type === 'accessory') {
-                const a = state.accessories.find(x => x.id === id);
-                if (!a) return;
-                el.innerHTML = `
-                    <div class="space-y-3">
-                    <div><label class="block text-xs font-semibold mb-1">Aksesuar Adı</label><input type="text" id="ed-1" value="${esc(a.name)}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Mevcut Stok (adet)</label><input type="number" id="ed-2" value="${a.qty}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Toplam Maliyet (₺)</label><input type="number" step="0.01" id="ed-3" value="${a.totalCost}" class="w-full border rounded p-2 text-sm"></div>
-                    </div>`;
-            } else if (type === 'expense') {
-                const l = state.transactions.find(x => x.id === id);
-                if (!l) return;
-                el.innerHTML = `
-                    <div class="space-y-3">
-                    <div><label class="block text-xs font-semibold mb-1">Açıklama</label><input type="text" id="ed-1" value="${esc(l.desc)}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Tutar (₺)</label><input type="number" step="0.01" id="ed-2" value="${l.amount}" class="w-full border rounded p-2 text-sm"></div>
-                    <div class="flex items-center gap-2"><input type="checkbox" id="ed-3" class="w-4 h-4 accent-emerald-600" ${l.faturali ? 'checked' : ''}><label for="ed-3" class="text-xs font-semibold text-slate-600">Faturalı Gider</label></div>
-                    </div>`;
-            } else if (type === 'sales') {
-                const l = state.orders.find(x => x.id === id);
-                if (!l) return;
-                el.innerHTML = `
-                    <div class="space-y-3">
-                    <div><label class="block text-xs font-semibold mb-1">Toplam Tutar (₺)</label><input type="number" step="0.01" min="0" id="ed-1" value="${l.total || 0}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Fatura Türü</label>
-                    <select id="ed-2" class="w-full border rounded p-2 text-sm">
-                    <option value="faturalı" ${l.type === 'faturalı' ? 'selected' : ''}>Faturalı</option>
-                    <option value="faturasız" ${l.type === 'faturasız' ? 'selected' : ''}>Faturasız</option>
-                    </select></div>
-                    <div><label class="block text-xs font-semibold mb-1">Fatura No</label><input type="text" id="ed-3" value="${esc(l.invoiceNo || '')}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Tahsilat Durumu</label>
-                    <select id="ed-4" class="w-full border rounded p-2 text-sm">
-                    <option value="paid" ${l.paymentStatus === 'paid' ? 'selected' : ''}>Tahsil Edildi</option>
-                    <option value="pending" ${l.paymentStatus === 'pending' ? 'selected' : ''}>Alacak (Bekliyor)</option>
-                    </select></div>
-                    </div>`;
+            let html = '';
+            if (type === 'accessory') {
+                const a = state.accessories.find(x => x.id === id); if (!a) return;
+                html = `
+                    <div class="mb-3"><label class="block text-xs font-semibold mb-1">Aksesuar Adı</label><input type="text" id="e-name" value="${esc(a.name)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div class="mb-3"><label class="block text-xs font-semibold mb-1">Stok (adet)</label><input type="number" id="e-qty" min="0" value="${a.qty}" class="w-full border rounded p-2 text-sm"><p class="text-[11px] text-slate-400 mt-1">Stok düzeltmesinde ortalama maliyet korunur.</p></div>`;
             } else if (type === 'dealer') {
-                const d = state.dealers.find(x => x.id === id);
-                if (!d) return;
-                el.innerHTML = `
-                    <div class="space-y-3">
-                    <div><label class="block text-xs font-semibold mb-1">Firma / Platform Adı</label><input type="text" id="ed-1" value="${esc(d.name)}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Kategori</label>
-                    <select id="ed-2" class="w-full border rounded p-2 text-sm">
-                    <option value="Fiziksel Mağaza" ${(d.category || d.type) === 'Fiziksel Mağaza' ? 'selected' : ''}>Fiziksel Mağaza</option>
-                    <option value="Bireysel Müşteri" ${(d.category || d.type) === 'Bireysel Müşteri' ? 'selected' : ''}>Bireysel Müşteri</option>
-                    <option value="E-Ticaret Kanalı" ${(d.category || d.type) === 'E-Ticaret Kanalı' ? 'selected' : ''}>E-Ticaret Kanalı</option>
-                    </select></div>
-                    </div>`;
+                const d = state.dealers.find(x => x.id === id); if (!d) return;
+                const cat = d.category || d.type || 'Bireysel Müşteri';
+                html = `
+                    <div class="mb-3"><label class="block text-xs font-semibold mb-1">Firma / Platform Adı</label><input type="text" id="e-name" value="${esc(d.name)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div class="mb-3"><label class="block text-xs font-semibold mb-1">Kategori</label>
+                    <select id="e-cat" class="w-full border rounded p-2 text-sm">
+                    <option ${cat === 'Fiziksel Mağaza' ? 'selected' : ''}>Fiziksel Mağaza</option>
+                    <option ${cat === 'Bireysel Müşteri' ? 'selected' : ''}>Bireysel Müşteri</option>
+                    <option ${cat === 'E-Ticaret Kanalı' ? 'selected' : ''}>E-Ticaret Kanalı</option>
+                    </select></div>`;
             } else if (type === 'asset') {
-                const a = state.assets.find(x => x.id === id);
-                if (!a) return;
-                el.innerHTML = `
-                    <div class="space-y-3">
-                    <div><label class="block text-xs font-semibold mb-1">Cihaz Adı</label><input type="text" id="ed-1" value="${esc(a.name)}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Fatura (₺)</label><input type="number" step="0.01" id="ed-2" value="${a.price}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Amortisman Yılı</label><input type="number" id="ed-3" value="${a.years}" class="w-full border rounded p-2 text-sm"></div>
+                const a = state.assets.find(x => x.id === id); if (!a) return;
+                html = `
+                    <div class="mb-3"><label class="block text-xs font-semibold mb-1">Cihaz Adı</label><input type="text" id="e-name" value="${esc(a.name)}" class="w-full border rounded p-2 text-sm"></div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div><label class="block text-xs font-semibold mb-1">Fatura (₺)</label><input type="number" id="e-price" value="${a.price}" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Amortisman Yılı</label><input type="number" id="e-years" min="1" value="${a.years}" class="w-full border rounded p-2 text-sm"></div>
                     </div>`;
-            } else if (type === 'productStock') {
-                const l = state.productStockLogs.find(x => x.id === id);
-                if (!l) return;
-                el.innerHTML = `
-                    <div class="space-y-3">
-                    <div><label class="block text-xs font-semibold mb-1">Adet</label><input type="number" id="ed-1" value="${l.qty}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Tarih</label><input type="date" id="ed-2" value="${String(l.date || '').slice(0,10)}" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-semibold mb-1">Not</label><input type="text" id="ed-3" value="${esc(l.note || '')}" class="w-full border rounded p-2 text-sm"></div>
-                    </div>`;
-            } else return;
+            } else { editTarget = null; return; }
+            $('edit-form').innerHTML = html;
             openModal('modal-edit');
         }
 
         function saveEdit() {
-            if (!editTarget) return;
-            const { type, id } = editTarget;
-            const kdvRate = state.settings.kdvRate;
-
-            if (type === 'filament') {
-                const l = state.filamentLogs.find(x => x.id === id);
-                if (!l) return;
-                const nGr = parseFloat($('ed-1').value), nPr = parseFloat($('ed-2').value);
-                const nFat = $('ed-3').checked;
-                if (isNaN(nGr) || isNaN(nPr) || nGr < 0 || nPr < 0) return alert('Geçersiz değer.');
-                state.filament.totalGr += (nGr - l.gr);
-                state.filament.totalCost += (nPr - l.pr);
-                l.gr = nGr; l.pr = nPr; l.faturali = nFat;
-                l.total = nPr;
-                const br = kdvBreakdown(nPr);
-                l.matrah = nFat ? br.matrah : nPr;
-                l.kdv = nFat ? br.kdv : 0;
-            } else if (type === 'accessoryLog') {
-                const l = state.accessoryLogs.find(x => x.id === id);
-                if (!l) return;
-                const nQty = parseInt($('ed-1').value);
-                const nUnit = parseFloat($('ed-2').value);
-                const nFat = $('ed-3').checked;
-                const nDate = $('ed-4').value || todayStr();
-                const nNote = $('ed-5').value.trim();
-                if (isNaN(nQty) || isNaN(nUnit) || nQty < 0 || nUnit < 0) return alert('Geçersiz değer.');
-                const nTotal = nQty * nUnit;
-                const acc = state.accessories.find(a => a.id === l.accId);
-                if (acc) {
-                    acc.qty += (nQty - (l.qty || 0));
-                    acc.totalCost += (nTotal - (l.total || l.price || 0));
-                }
-                l.qty = nQty;
-                l.unitPrice = nUnit;
-                l.total = nTotal;
-                l.price = nTotal;
-                l.faturali = nFat;
-                const br = kdvBreakdown(nTotal);
-                l.matrah = nFat ? br.matrah : nTotal;
-                l.kdv = nFat ? br.kdv : 0;
-                l.date = new Date(nDate).toISOString();
-                l.note = nNote;
-            } else if (type === 'accessory') {
-                const a = state.accessories.find(x => x.id === id);
-                if (!a) return;
-                const nName = $('ed-1').value.trim();
-                const nQty = parseInt($('ed-2').value), nCost = parseFloat($('ed-3').value);
-                if (!nName || isNaN(nQty) || isNaN(nCost) || nQty < 0 || nCost < 0) return alert('Geçersiz değer.');
-                a.name = nName; a.qty = nQty; a.totalCost = nCost;
-                state.models.forEach(m => { (m.recipe || []).forEach(r => { if (r.id === a.id) r.name = nName; }); });
-            } else if (type === 'expense') {
-                const l = state.transactions.find(x => x.id === id);
-                if (!l) return;
-                const nDesc = $('ed-1').value.trim(), nAmt = parseFloat($('ed-2').value);
-                const nFat = $('ed-3').checked;
-                if (!nDesc || isNaN(nAmt) || nAmt < 0) return alert('Geçersiz değer.');
-                l.desc = nDesc; l.amount = nAmt; l.faturali = nFat;
-                l.kdv = nFat ? nAmt - (nAmt / (1 + kdvRate / 100)) : 0;
-            } else if (type === 'sales') {
-                const l = state.orders.find(x => x.id === id);
-                if (!l) return;
-                const nTot = parseFloat($('ed-1').value);
-                const nType = $('ed-2').value;
-                const nInv = $('ed-3').value.trim();
-                const nPay = $('ed-4').value;
-                if (isNaN(nTot) || nTot < 0) return alert('Geçersiz değer.');
-                l.total = nTot;
-                // KDV yalnızca faturalıysa ayrıştırılır
-                if (nType === 'faturalı') {
-                    l.matrah = nTot / (1 + kdvRate / 100);
-                    l.kdv = nTot - l.matrah;
-                } else {
-                    l.matrah = nTot;
-                    l.kdv = 0;
-                }
-                l.type = nType;
-                l.invoiceNo = nType === 'faturalı' ? nInv : '';
-                l.paymentStatus = nPay;
-                if (nPay === 'paid' && !l.paidDate) l.paidDate = new Date().toISOString();
-                if (nPay === 'pending') { l.paidDate = ''; if (!l.dueDate) l.dueDate = todayStr(); }
+            if (!editTarget) return closeModal('modal-edit');
+            const type = editTarget.type, id = editTarget.id;
+            if (type === 'accessory') {
+                const a = state.accessories.find(x => x.id === id); if (!a) return;
+                const name = $('e-name').value.trim(); const q = parseInt($('e-qty').value);
+                if (!name || isNaN(q) || q < 0) return alert('Geçerli ad ve stok girin.');
+                const avg = a.qty > 0 ? (a.totalCost / a.qty) : 0;
+                a.name = name; a.qty = q; a.totalCost = q * avg;
             } else if (type === 'dealer') {
-                const d = state.dealers.find(x => x.id === id);
-                if (!d) return;
-                const nName = $('ed-1').value.trim();
-                if (!nName) return alert('İsim boş olamaz.');
-                d.name = nName; d.category = $('ed-2').value; d.type = d.category;
+                const d = state.dealers.find(x => x.id === id); if (!d) return;
+                const name = $('e-name').value.trim();
+                if (!name) return alert('İsim zorunludur.');
+                d.name = name; d.category = $('e-cat').value; d.type = d.category;
             } else if (type === 'asset') {
-                const a = state.assets.find(x => x.id === id);
-                if (!a) return;
-                const nName = $('ed-1').value.trim();
-                const nPrice = parseFloat($('ed-2').value), nYears = parseInt($('ed-3').value);
-                if (!nName || isNaN(nPrice) || isNaN(nYears) || nPrice < 0 || nYears < 1) return alert('Geçersiz değer.');
-                a.name = nName; a.price = nPrice; a.years = nYears;
-            } else if (type === 'productStock') {
-                const l = state.productStockLogs.find(x => x.id === id);
-                if (!l) return;
-                const nQty = parseInt($('ed-1').value);
-                const nDate = $('ed-2').value || todayStr();
-                const nNote = $('ed-3').value.trim();
-                if (isNaN(nQty) || nQty < 0) return alert('Geçersiz adet.');
-                const p = state.models.find(m => m.id === l.productId);
-                if (p) {
-                    const diff = nQty - (l.qty || 0);
-                    if (diff > 0) {
-                        const err = consumeMaterials(p, diff);
-                        if (err) return alert(err);
-                    } else if (diff < 0) {
-                        restoreMaterials(p, -diff);
-                    }
-                    p.stock = (p.stock || 0) + diff;
-                }
-                l.qty = nQty;
-                l.date = new Date(nDate).toISOString();
-                l.note = nNote;
+                const a = state.assets.find(x => x.id === id); if (!a) return;
+                const name = $('e-name').value.trim(); const p = parseFloat($('e-price').value); const y = parseInt($('e-years').value);
+                if (!name || isNaN(p) || p < 0 || isNaN(y) || y < 1) return alert('Geçerli bilgiler girin.');
+                a.name = name; a.price = p; a.years = y;
             }
             editTarget = null;
             saveState(); renderAll(); closeModal('modal-edit');
-            if (currentHistoryType) {
-                if (currentHistoryType.startsWith('accessoryById:')) openAccessoryHistory(currentHistoryType.split(':')[1]);
-                else if (currentHistoryType.startsWith('productById:')) openProductHistory(currentHistoryType.split(':')[1]);
-                else openHistory(currentHistoryType);
-            }
         }
 
         // ====
-        //  SİPARİŞ DÜZENLEME (Kalem bazlı)
-        // ====
-        function openOrderEditModal(orderId) {
-            const o = state.orders.find(x => x.id === orderId);
-            if (!o) return;
-            $('m-ord-id').value = o.id;
-            $('m-ord-dealer').innerHTML = state.dealers.map(d => `<option value="${d.id}" ${d.id === o.locId ? 'selected' : ''}>${esc(d.name)} (${esc(d.category || d.type || 'Bireysel Müşteri')})</option>`).join('');
-            $('m-ord-status').value = o.status || 'pending';
-            $('m-ord-type').value = o.type || '';
-            $('m-ord-inv').value = o.invoiceNo || '';
-            $('m-ord-pay').value = o.paymentStatus || 'pending';
-            $('m-ord-due').value = o.dueDate ? String(o.dueDate).slice(0, 10) : '';
-            $('m-ord-date').value = (o.date || new Date().toISOString()).slice(0, 10);
-            orderEditItems = (o.items || []).map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: parseFloat(it.unitPrice ?? 0) || 0 }));
-            renderOrderEditItems();
-            openModal('modal-order-edit');
-        }
-
-        function renderOrderEditItems() {
-            $('m-ord-items').innerHTML = orderEditItems.map((it, idx) => {
-                const options = state.models.map(m => `<option value="${m.id}" ${m.id === it.mId ? 'selected' : ''}>${esc(m.name)} (stok: ${m.stock || 0})</option>`).join('');
-                return `<div class="grid grid-cols-12 gap-2 items-end">
-                    <div class="col-span-6"><label class="block text-[10px] mb-1">Ürün</label><select onchange="orderEditItems[${idx}].mId=this.value;renderOrderEditTotals()" class="w-full border rounded p-2 text-xs">${options}</select></div>
-                    <div class="col-span-2"><label class="block text-[10px] mb-1">Adet</label><input type="number" min="1" value="${it.qty}" onchange="orderEditItems[${idx}].qty=parseFloat(this.value)||0;renderOrderEditTotals()" class="w-full border rounded p-2 text-xs"></div>
-                    <div class="col-span-3"><label class="block text-[10px] mb-1">Birim Fiyat</label><input type="number" step="0.01" min="0" value="${it.unitPrice}" onchange="orderEditItems[${idx}].unitPrice=parseFloat(this.value)||0;renderOrderEditTotals()" class="w-full border rounded p-2 text-xs"></div>
-                    <div class="col-span-1"><button onclick="orderEditItems.splice(${idx},1);renderOrderEditItems()" class="w-full bg-rose-100 text-rose-700 rounded p-2 text-xs">Sil</button></div>
-                </div>`;
-            }).join('') || '<p class="text-xs text-slate-400">Kalem yok. + Kalem ile ekleyin.</p>';
-            renderOrderEditTotals();
-        }
-
-        function addOrderEditItem() {
-            const first = state.models[0];
-            if (!first) return alert('Önce ürün oluşturun.');
-            orderEditItems.push({ mId: first.id, qty: 1, unitPrice: first.price || 0 });
-            renderOrderEditItems();
-        }
-
-        function renderOrderEditTotals() {
-            // Matrahı birim fiyatlardan hesapla
-            const matrah = orderEditItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
-            const isFaturali = $('m-ord-type').value === 'faturalı';
-            const rate = (state?.settings?.kdvRate || 20) / 100;
-
-            // Faturalıysa KDV ekle, değilse 0
-            const kdv = isFaturali ? matrah * rate : 0;
-            const total = matrah + kdv;
-
-            $('m-ord-total').innerText = fmt(total);
-            $('m-ord-net').innerText = fmt(matrah);
-            $('m-ord-kdv').innerText = fmt(kdv);
-        }
-
-        function saveOrderEdit() {
-            const orderId = $('m-ord-id').value;
-            const o = state.orders.find(x => x.id === orderId);
-            if (!o) return alert('Sipariş bulunamadı.');
-            if (!orderEditItems.length) return alert('En az bir sipariş kalemi olmalı.');
-
-            const newItems = orderEditItems.map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: parseFloat(it.unitPrice) || 0 }));
-            if (newItems.some(it => !it.mId || it.qty <= 0 || it.unitPrice < 0)) return alert('Kalem değerleri geçersiz.');
-
-            const newStatus = $('m-ord-status').value;
-            const newType = newStatus === 'delivered' ? $('m-ord-type').value : '';
-
-            // --- Ürün stok farkını yönet (hammadde üretim anında tüketilir, burada sadece ürün stoğu) ---
-            const oldDeducted = !!o.stockDeducted;
-            const stockMap = new Map(state.models.map(m => [m.id, m.stock || 0]));
-            if (oldDeducted) {
-                (o.items || []).forEach(it => stockMap.set(it.mId, (stockMap.get(it.mId) || 0) + (parseFloat(it.qty) || 0)));
-            }
-            for (const it of newItems) {
-                const cur = stockMap.get(it.mId) || 0;
-                if (cur < it.qty) return alert('Yetersiz stok: ' + (state.models.find(m => m.id === it.mId)?.name || it.mId));
-                stockMap.set(it.mId, cur - it.qty);
-            }
-            state.models.forEach(m => { m.stock = stockMap.get(m.id) || 0; });
-
-            // --- Tutarlar: önce fatura tipini al, sonra matrah/KDV/totali hesapla ---
-            const matrah = newItems.reduce((s, it) => s + (it.qty * it.unitPrice), 0);
-            const rate = (state.settings.kdvRate || 20) / 100;
-
-            o.locId = $('m-ord-dealer').value;
-            o.items = newItems;
-            o.status = newStatus;
-            o.stockDeducted = true;
-            o.type = newType;
-            o.matrah = matrah;
-            o.kdv = newType === 'faturalı' ? matrah * rate : 0;
-            o.total = o.matrah + o.kdv;
-            o.invoiceNo = newType === 'faturalı' ? $('m-ord-inv').value.trim() : '';
-            o.paymentStatus = $('m-ord-pay').value;
-            o.dueDate = $('m-ord-due').value || '';
-            o.date = new Date(($('m-ord-date').value || todayStr()) + 'T12:00:00').toISOString();
-            if (o.status === 'pending') {
-                o.invoiceNo = ''; o.deliveryDate = ''; o.paymentStatus = 'pending'; o.paidDate = '';
-            } else {
-                if (!o.deliveryDate) o.deliveryDate = new Date().toISOString();
-                if (o.paymentStatus === 'paid' && !o.paidDate) o.paidDate = new Date().toISOString();
-                if (o.paymentStatus === 'pending') o.paidDate = '';
-            }
-
-            saveState(); renderAll(); closeModal('modal-order-edit');
-        }
-
-        // ====
-        //  AYARLAR
+        //  AYARLAR & YEDEKLEME
         // ====
         function renderSettings() {
             const s = state.settings;
@@ -2792,79 +3043,197 @@
             if ($('set-target')) $('set-target').value = s.targetProfit;
             if ($('set-low-fil')) $('set-low-fil').value = s.lowFilament;
             if ($('set-low-acc')) $('set-low-acc').value = s.lowAccessory;
+            const wrap = $('brackets-editor');
+            if (wrap && !(document.activeElement && wrap.contains(document.activeElement))) {
+                let html = '';
+                for (let i = 0; i < 5; i++) {
+                    const b = (s.brackets && s.brackets[i]) || { limit: null, rate: (s.brackets && s.brackets.length ? s.brackets[s.brackets.length - 1].rate : 40) };
+                    const isLast = i === 4;
+                    html += `<div class="flex items-center gap-2 border border-slate-200 rounded p-2">
+                        <span class="text-xs font-bold text-slate-400 w-5">${i + 1}.</span>
+                        <div class="flex-1"><label class="text-[10px] text-slate-500 block">Üst Limit (₺${isLast ? ' — sınırsız' : ''})</label><input type="number" id="brk-limit-${i + 1}" value="${b.limit == null ? '' : b.limit}" ${isLast ? 'disabled placeholder="∞"' : ''} class="w-full border rounded p-1 text-sm"></div>
+                        <div class="w-20"><label class="text-[10px] text-slate-500 block">Oran (%)</label><input type="number" id="brk-rate-${i + 1}" value="${b.rate}" class="w-full border rounded p-1 text-sm"></div>
+                    </div>`;
+                }
+                wrap.innerHTML = html;
+            }
+        }
 
-            const cfg = getFbCfg();
-            $('fb-apikey').value = cfg.apiKey || '';
-            $('fb-authdomain').value = cfg.authDomain || '';
-            $('fb-projectid').value = cfg.projectId || '';
-            $('fb-storagebucket').value = cfg.storageBucket || '';
-            $('fb-senderid').value = cfg.messagingSenderId || '';
-            $('fb-appid').value = cfg.appId || '';
-            $('fb-collection').value = cfg.collection || 'ERP_Data';
-            $('fb-doc').value = cfg.doc || 'Main_Database_V51';
-
-            const br = s.brackets || [];
-            $('brackets-editor').innerHTML = br.map((b, i) => `
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-slate-500 w-6">${i + 1}.</span>
-                    <input type="number" id="brk-limit-${i + 1}" placeholder="Üst sınır (₺)" value="${b.limit === null ? '' : b.limit}" class="flex-1 border rounded p-1.5 text-xs" ${i === br.length - 1 ? 'disabled' : ''}>
-                    <input type="number" id="brk-rate-${i + 1}" value="${b.rate}" class="w-20 border rounded p-1.5 text-xs">
-                    <span class="text-xs text-slate-500">%</span>
-                </div>`).join('');
+        function loadFirebaseForm() {
+            const c = getFbCfg();
+            const map = { 'fb-apikey': c.apiKey, 'fb-authdomain': c.authDomain, 'fb-projectid': c.projectId, 'fb-storagebucket': c.storageBucket, 'fb-senderid': c.messagingSenderId, 'fb-appid': c.appId, 'fb-collection': c.collection, 'fb-doc': c.doc };
+            Object.entries(map).forEach(([k, v]) => { if ($(k) && v != null) $(k).value = v; });
         }
 
         function saveFirebaseConfig() {
             const cfg = {
-                apiKey: $('fb-apikey').value.trim(),
-                authDomain: $('fb-authdomain').value.trim(),
-                projectId: $('fb-projectid').value.trim(),
-                storageBucket: $('fb-storagebucket').value.trim(),
-                messagingSenderId: $('fb-senderid').value.trim(),
-                appId: $('fb-appid').value.trim(),
-                collection: $('fb-collection').value.trim() || 'ERP_Data',
-                doc: $('fb-doc').value.trim() || 'Main_Database_V51'
+                apiKey: $('fb-apikey').value.trim(), authDomain: $('fb-authdomain').value.trim(),
+                projectId: $('fb-projectid').value.trim(), storageBucket: $('fb-storagebucket').value.trim(),
+                messagingSenderId: $('fb-senderid').value.trim(), appId: $('fb-appid').value.trim(),
+                collection: $('fb-collection').value.trim() || 'ERP_Data', doc: $('fb-doc').value.trim() || 'Main_Database_V51'
             };
-            if (!cfg.apiKey || !cfg.projectId) return alert('apiKey ve projectId zorunludur.');
+            if (!cfg.apiKey || !cfg.projectId) return alert('apiKey ve projectId alanları zorunludur.');
             localStorage.setItem(LS_FB, JSON.stringify(cfg));
-            alert('Firebase config kaydedildi. Sayfa yeniden yükleniyor...');
+            alert('Firebase ayarları kaydedildi. Sayfa yenilenecek.');
             location.reload();
         }
 
-        // ====
-        //  YEDEKLEME
-        // ====
         function exportBackup() {
             const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'mete3d_yedek_' + todayStr() + '.json';
-            a.click();
-            URL.revokeObjectURL(a.href);
+            a.download = 'mete3d_erp_yedek_' + todayStr() + '.json';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         }
 
-        function importBackup(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    state = normalizeState(data);
+        function importBackup(ev) {
+            const f = ev.target.files && ev.target.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = () => {
+                let parsed;
+                try { parsed = JSON.parse(r.result); } catch (e) { return alert('Geçersiz yedek dosyası.'); }
+                askConfirm('Yedek geri yüklenecek; mevcut veriler yedektekiyle değiştirilecek. Emin misiniz?', () => {
+                    state = normalizeState(parsed);
                     saveState(); renderAll();
-                    alert('Yedek başarıyla yüklendi.');
-                } catch (err) {
-                    alert('Geçersiz yedek dosyası: ' + err.message);
-                }
+                    alert('Yedek başarıyla geri yüklendi.');
+                });
             };
-            reader.readAsText(file);
-            event.target.value = '';
+            r.readAsText(f);
+            ev.target.value = '';
         }
 
         function resetData() {
             state = normalizeState(null);
             saveState(); renderAll();
-            alert('Tüm veriler sıfırlandı.');
         }
+
+        // ====
+        //  SİPARİŞ DÜZENLEME
+        // ====
+        function openOrderEditModal(oId) {
+            const o = state.orders.find(x => x.id === oId);
+            if (!o) return;
+            $('m-ord-id').value = o.id;
+            const hasD = state.dealers.some(d => d.id === o.locId);
+            $('m-ord-dealer').innerHTML = state.dealers.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('') + (hasD ? '' : `<option value="${o.locId}">(Silinmiş müşteri)</option>`);
+            $('m-ord-dealer').value = o.locId;
+            $('m-ord-status').value = o.status === 'delivered' ? 'delivered' : 'pending';
+            $('m-ord-type').value = o.type || '';
+            $('m-ord-inv').value = o.invoiceNo || '';
+            $('m-ord-pay').value = o.paymentStatus === 'paid' ? 'paid' : 'pending';
+            $('m-ord-due').value = o.dueDate || '';
+            $('m-ord-date').value = new Date(o.date).toISOString().slice(0, 10);
+            orderEditItems = (o.items || []).map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: it.unitPrice != null ? it.unitPrice : 0 }));
+            renderOrderEditItems();
+            openModal('modal-order-edit');
+        }
+
+        function renderOrderEditItems() {
+            $('m-ord-items').innerHTML = orderEditItems.map((it, i) => {
+                const opts = state.models.map(m => `<option value="${m.id}" ${m.id === it.mId ? 'selected' : ''}>${esc(m.name)}</option>`).join('');
+                return `<div class="flex gap-2 items-center">
+                    <select onchange="orderEditItemProductChanged(${i}, this.value)" class="flex-1 border rounded p-1.5 text-sm">${opts}</select>
+                    <input type="number" min="0" value="${it.qty}" onchange="orderEditItems[${i}].qty = parseFloat(this.value) || 0; renderOrderEditTotals()" class="w-16 border rounded p-1.5 text-sm text-center" title="Adet">
+                    <input type="number" min="0" step="0.01" value="${it.unitPrice}" onchange="orderEditItems[${i}].unitPrice = parseFloat(this.value) || 0; renderOrderEditTotals()" class="w-24 border rounded p-1.5 text-sm text-right" title="Birim Fiyat (KDV hariç)">
+                    <button onclick="orderEditItems.splice(${i}, 1); renderOrderEditItems()" class="text-rose-500 font-bold px-1">X</button>
+                </div>`;
+            }).join('') || '<p class="text-xs text-slate-400">Kalem yok. "+ Kalem" ile ekleyin.</p>';
+            renderOrderEditTotals();
+        }
+
+        function orderEditItemProductChanged(i, mId) {
+            const m = state.models.find(x => x.id === mId);
+            orderEditItems[i].mId = mId;
+            if (m) orderEditItems[i].unitPrice = m.price || 0;
+            renderOrderEditItems();
+        }
+
+        function addOrderEditItem() {
+            if (!state.models.length) return alert('Önce Ürünler sekmesinden ürün ekleyin.');
+            const m = state.models[0];
+            orderEditItems.push({ mId: m.id, qty: 1, unitPrice: m.price || 0 });
+            renderOrderEditItems();
+        }
+
+        function renderOrderEditTotals() {
+            const tot = orderEditItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+            const type = $('m-ord-type') ? $('m-ord-type').value : '';
+            const kdv = type === 'faturalı' ? tot * ((state.settings.kdvRate || 20) / 100) : 0;
+            $('m-ord-total').innerText = fmt(tot + kdv);
+            $('m-ord-net').innerText = fmt(tot);
+            $('m-ord-kdv').innerText = fmt(kdv);
+        }
+
+        function saveOrderEdit() {
+            const o = state.orders.find(x => x.id === $('m-ord-id').value);
+            if (!o) return;
+            if (!orderEditItems.length) return alert('Sipariş en az bir kalem içermelidir.');
+            // Stok farklarını doğrula (hizmet ürünleri hariç)
+            const oldQ = {}, newQ = {};
+            if (o.stockDeducted !== false) {
+                (o.items || []).forEach(it => {
+                    const m = state.models.find(x => x.id === it.mId);
+                    if (m && (m.ptype || 'uretilen') !== 'hizmet') oldQ[it.mId] = (oldQ[it.mId] || 0) + (parseFloat(it.qty) || 0);
+                });
+            }
+            for (const it of orderEditItems) {
+                const m = state.models.find(x => x.id === it.mId);
+                if (!m) return alert('Kalemlerden biri geçersiz ürüne işaret ediyor. Lütfen kontrol edin.');
+                if ((m.ptype || 'uretilen') !== 'hizmet') newQ[it.mId] = (newQ[it.mId] || 0) + (parseFloat(it.qty) || 0);
+            }
+            for (const [mId, nq] of Object.entries(newQ)) {
+                const delta = nq - (oldQ[mId] || 0);
+                if (delta > 0) {
+                    const m = state.models.find(x => x.id === mId);
+                    if ((m.stock || 0) < delta) return alert(m.name + ': stok yetersiz (ek gereken ' + delta + ' adet). Mevcut: ' + (m.stock || 0));
+                }
+            }
+            new Set([...Object.keys(oldQ), ...Object.keys(newQ)]).forEach(mId => {
+                const delta = (newQ[mId] || 0) - (oldQ[mId] || 0);
+                const m = state.models.find(x => x.id === mId);
+                if (m && delta) m.stock = (m.stock || 0) - delta;
+            });
+            // Alanları güncelle
+            o.locId = $('m-ord-dealer').value || o.locId;
+            o.items = orderEditItems.map(it => ({ mId: it.mId, qty: parseFloat(it.qty) || 0, unitPrice: parseFloat(it.unitPrice) || 0 }));
+            o.matrah = o.items.reduce((s, it) => s + it.qty * it.unitPrice, 0);
+            const dv = $('m-ord-date').value;
+            if (dv) o.date = new Date(dv + 'T12:00:00').toISOString();
+            o.stockDeducted = true;
+            const newStatus = $('m-ord-status').value;
+            if (newStatus === 'pending') {
+                o.status = 'pending';
+                o.deliveryDate = ''; o.type = ''; o.invoiceNo = '';
+                o.kdv = 0; o.total = o.matrah;
+                o.paymentStatus = 'pending'; o.paidDate = '';
+                o.dueDate = $('m-ord-due').value || '';
+            } else {
+                o.status = 'delivered';
+                if (!o.deliveryDate) o.deliveryDate = new Date().toISOString();
+                o.type = $('m-ord-type').value;
+                o.invoiceNo = o.type === 'faturalı' ? $('m-ord-inv').value.trim() : '';
+                o.kdv = o.type === 'faturalı' ? o.matrah * ((state.settings.kdvRate || 20) / 100) : 0;
+                o.total = o.matrah + o.kdv;
+                o.paymentStatus = $('m-ord-pay').value;
+                if (o.paymentStatus === 'paid') { if (!o.paidDate) o.paidDate = new Date().toISOString(); o.dueDate = ''; }
+                else { o.paidDate = ''; o.dueDate = $('m-ord-due').value || todayStr(); }
+            }
+            saveState(); renderAll(); closeModal('modal-order-edit');
+        }
+
+        loadFirebaseForm();
+
+        // --- Logo güvencesi: Logo.png yoksa sekme/bağlantı simgelerini yedek kopyaya yönlendir ---
+        (function ensureLogo() {
+            const FALLBACK_LOGO = 'https://cdn.abacus.ai/images/f2b6e7f4-15d7-48cf-9213-5396f1ef6839.png';
+            const test = new Image();
+            test.onerror = () => {
+                document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(l => { l.href = FALLBACK_LOGO; });
+            };
+            test.src = 'Logo.png';
+        })();
 
         // ====
         //  BAŞLAT
