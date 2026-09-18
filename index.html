@@ -174,6 +174,17 @@
                 </div>
             </div>
 
+            <!-- Kategori Üretim & Satış Özeti (tüm zamanlar) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-factory text-emerald-500"></i> Üretim & Satış Özeti (Kategori — Tüm Zamanlar)</h3>
+                    <button onclick="switchTab('tab-reports')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-semibold transition">Detaylı İstatistik</button>
+                </div>
+                <div id="dash-cat-stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <!-- JS Injected -->
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <!-- Son Siparişler -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
@@ -671,6 +682,35 @@
                     <tbody id="ui-category-report" class="divide-y divide-slate-100"></tbody>
                     </table>
                     </div>
+                </div>
+            </div>
+
+            <!-- Kategori Üretim & Satış İstatistiği (tüm zamanlar) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mt-6">
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-factory text-sky-500"></i> Kategori Üretim & Satış İstatistiği (Tüm Zamanlar)</h3>
+                    <button onclick="exportCategoryStatsCSV()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Kategori İstatistik CSV</button>
+                </div>
+                <p class="text-xs text-slate-500 mb-3">Bugüne kadarki üretim, satış, hediye ve kalan stok — kategori bazında. "Mutabakat" sütunu: Üretim + Hazır Alım − Satış − Hediye − Kalan Stok = 0 olmalıdır; sıfır değilse bazı kayıtlar eksik/fazla demektir (örn. ürün silinmiş veya stok kaydı elle düzeltilmiş olabilir).</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-100 text-slate-600 font-semibold">
+                            <tr>
+                                <th class="p-2">Kategori</th>
+                                <th class="p-2 text-center">Ürün Çeşidi</th>
+                                <th class="p-2 text-center">Üretilen</th>
+                                <th class="p-2 text-center">Hazır Alım</th>
+                                <th class="p-2 text-center">Satılan</th>
+                                <th class="p-2 text-center">Hediye</th>
+                                <th class="p-2 text-center">Kalan Stok</th>
+                                <th class="p-2 text-center">Satış / Giriş</th>
+                                <th class="p-2 text-right">Ort. Satış Fiyatı</th>
+                                <th class="p-2 text-right">Toplam Ciro</th>
+                                <th class="p-2 text-center">Mutabakat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ui-cat-stats" class="divide-y divide-slate-100"></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -2277,6 +2317,53 @@
             return { year: y, cashIn, cashOut, netCash, alacak, faturaliGelir, faturaliGider, kdvCikan, kdvGiren, odenecekKdv, devredenKdv, matrah, yillikVergi, yearlyFixed, yearlyAst, bracketRate: taxRateFor(matrah, s) };
         }
 
+        // --- Kategori üretim/satış istatistiği (tüm zamanlar) ---
+        // Üretilen: kendi ürettiği ürünlerin stok girişleri (hammadde düşümü yapılan kayıtlar)
+        // Hazır Alım: dışarıdan alınan ürünlerin stok girişleri
+        // Satılan: teslim edilmiş sipariş kalemleri · Hediye: hediye fişi kalemleri · Stok: anlık ürün stoğu
+        // Mutabakat: Üretilen + Hazır Alım − Satılan − Hediye − Stok = 0 olmalıdır.
+        // Silinmiş ürünlerin kayıtları iki tarafta da yok sayılır (tutarlılık korunur).
+        function categoryStats() {
+            const stats = {};
+            const get = cat => {
+                if (!stats[cat]) stats[cat] = { models: 0, produced: 0, purchased: 0, sold: 0, gifted: 0, stock: 0, ciro: 0 };
+                return stats[cat];
+            };
+            const ptypeOf = m => (m && m.ptype) || 'uretilen';
+            state.models.forEach(m => {
+                if (ptypeOf(m) === 'hizmet') return;
+                const g = get(m.category || 'Diğer');
+                g.models++;
+                g.stock += Math.max(0, m.stock || 0);
+            });
+            state.productStockLogs.forEach(l => {
+                const m = state.models.find(x => x.id === l.productId);
+                if (!m || ptypeOf(m) === 'hizmet') return;
+                const g = get(m.category || 'Diğer');
+                if (ptypeOf(m) === 'hazir') g.purchased += (l.qty || 0);
+                else g.produced += (l.qty || 0);
+            });
+            state.orders.forEach(o => {
+                if (o.status !== 'delivered') return;
+                (o.items || []).forEach(it => {
+                    const m = state.models.find(x => x.id === it.mId);
+                    if (!m || ptypeOf(m) === 'hizmet') return;
+                    const g = get(m.category || 'Diğer');
+                    const q = parseFloat(it.qty) || 0;
+                    g.sold += q;
+                    g.ciro += q * (it.unitPrice != null ? it.unitPrice : (m.price || 0));
+                });
+            });
+            (state.giftLogs || []).forEach(gl => {
+                (gl.items || []).forEach(it => {
+                    const m = state.models.find(x => x.id === it.mId);
+                    if (!m || ptypeOf(m) === 'hizmet') return;
+                    get(m.category || 'Diğer').gifted += (parseFloat(it.qty) || 0);
+                });
+            });
+            return stats;
+        }
+
         // ====
         //  ANA RENDER MOTORU
         // ====
@@ -2395,6 +2482,27 @@
                     <b class="text-purple-700">${fmt(o.total)}</b>
                 </div>`;
             }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen tahsilat yok.</p>';
+
+            // Kategori üretim & satış özeti (tüm zamanlar): üretilen / satılan / hediye / kalan
+            if ($('dash-cat-stats')) {
+                const catEntries = Object.entries(categoryStats()).sort((a, b) => ((b[1].produced + b[1].purchased) - (a[1].produced + a[1].purchased)));
+                $('dash-cat-stats').innerHTML = catEntries.map(([cat, s]) => {
+                    const giris = s.produced + s.purchased;
+                    const oran = giris > 0 ? (s.sold / giris) * 100 : 0;
+                    return `
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2 gap-2">
+                            <span class="font-bold text-slate-700 text-sm truncate">${esc(cat)}</span>
+                            <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">Kalan: ${fmtN(s.stock)}</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500"><span>Üretilen:</span><span class="font-semibold text-slate-700">${fmtN(s.produced)}</span></div>
+                        ${s.purchased > 0 ? `<div class="flex justify-between text-xs text-slate-500 mt-1"><span>Hazır Alım:</span><span class="font-semibold text-slate-700">${fmtN(s.purchased)}</span></div>` : ''}
+                        <div class="flex justify-between text-xs text-slate-500 mt-1"><span>Satılan:</span><span class="font-semibold text-sky-700">${fmtN(s.sold)}</span></div>
+                        ${s.gifted > 0 ? `<div class="flex justify-between text-xs text-slate-500 mt-1"><span>Hediye:</span><span class="font-semibold text-purple-700">${fmtN(s.gifted)}</span></div>` : ''}
+                        <div class="flex justify-between text-xs text-slate-500 mt-1 border-t border-slate-200 pt-1"><span>Satış / Giriş:</span><span class="font-semibold ${oran >= 50 ? 'text-emerald-700' : 'text-amber-700'}">%${oran.toFixed(0)}</span></div>
+                    </div>`;
+                }).join('') || '<p class="text-center text-slate-400 text-sm py-4 col-span-full">Henüz stok takibi yapılan ürün yok.</p>';
+            }
         }
 
         // --- Hammadde ---
@@ -2974,6 +3082,7 @@
 
         function renderReports() {
             renderWasteBox();
+            renderCategoryStats();
             $('rep-year').innerText = currentYear;
 
             // Aylık Kâr / Zarar
@@ -3035,6 +3144,55 @@
                     <td class="p-2">${esc(g.note || '')}</td>
                     <td class="p-2 text-center"><button onclick="deleteLog('gift','${g.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td>
                 </tr>`).join('') || '<tr><td colspan="7" class="p-4 text-center text-slate-400">Henüz hediye kaydı yok.</td></tr>';
+        }
+
+        // --- Kategori Üretim & Satış İstatistiği tablosu (Raporlar, tüm zamanlar) ---
+        function renderCategoryStats() {
+            const box = $('ui-cat-stats');
+            if (!box) return;
+            const entries = Object.entries(categoryStats()).sort((a, b) => ((b[1].produced + b[1].purchased) - (a[1].produced + a[1].purchased)));
+            let tP = 0, tB = 0, tS = 0, tG = 0, tK = 0, tC = 0, tM = 0;
+            const rows = entries.map(([cat, s]) => {
+                tP += s.produced; tB += s.purchased; tS += s.sold; tG += s.gifted; tK += s.stock; tC += s.ciro; tM += s.models;
+                const giris = s.produced + s.purchased;
+                const oran = giris > 0 ? (s.sold / giris) * 100 : 0;
+                const avg = s.sold > 0 ? (s.ciro / s.sold) : 0;
+                const diff = giris - s.sold - s.gifted - s.stock;
+                const mut = Math.abs(diff) < 0.001
+                    ? '<span class="text-emerald-600 font-bold" title="Üretim + Alım − Satış − Hediye − Stok = 0">✓</span>'
+                    : `<span class="text-amber-700 font-bold" title="Üretim + Alım − Satış − Hediye − Stok">${diff > 0 ? '+' : ''}${fmtN(diff)}</span>`;
+                return `<tr>
+                    <td class="p-2 font-medium">${esc(cat)}</td>
+                    <td class="p-2 text-center text-slate-500">${fmtN(s.models)}</td>
+                    <td class="p-2 text-center font-bold text-sky-700">${fmtN(s.produced)}</td>
+                    <td class="p-2 text-center text-slate-600">${fmtN(s.purchased)}</td>
+                    <td class="p-2 text-center font-bold text-emerald-700">${fmtN(s.sold)}</td>
+                    <td class="p-2 text-center text-purple-700">${fmtN(s.gifted)}</td>
+                    <td class="p-2 text-center font-bold text-slate-800">${fmtN(s.stock)}</td>
+                    <td class="p-2 text-center font-semibold ${oran >= 50 ? 'text-emerald-700' : 'text-amber-700'}">%${oran.toFixed(0)}</td>
+                    <td class="p-2 text-right">${fmt(avg)}</td>
+                    <td class="p-2 text-right font-semibold">${fmt(s.ciro)}</td>
+                    <td class="p-2 text-center">${mut}</td>
+                </tr>`;
+            }).join('');
+            const tGiris = tP + tB;
+            const tDiff = tGiris - tS - tG - tK;
+            const tOran = tGiris > 0 ? (tS / tGiris) * 100 : 0;
+            const tAvg = tS > 0 ? (tC / tS) : 0;
+            const totalRow = `<tr class="bg-slate-100 font-bold">
+                <td class="p-2">TOPLAM</td>
+                <td class="p-2 text-center">${fmtN(tM)}</td>
+                <td class="p-2 text-center text-sky-700">${fmtN(tP)}</td>
+                <td class="p-2 text-center">${fmtN(tB)}</td>
+                <td class="p-2 text-center text-emerald-700">${fmtN(tS)}</td>
+                <td class="p-2 text-center text-purple-700">${fmtN(tG)}</td>
+                <td class="p-2 text-center">${fmtN(tK)}</td>
+                <td class="p-2 text-center">%${tOran.toFixed(0)}</td>
+                <td class="p-2 text-right">${fmt(tAvg)}</td>
+                <td class="p-2 text-right">${fmt(tC)}</td>
+                <td class="p-2 text-center">${Math.abs(tDiff) < 0.001 ? '<span class="text-emerald-600">✓</span>' : '<span class="text-amber-700">' + (tDiff > 0 ? '+' : '') + fmtN(tDiff) + '</span>'}</td>
+            </tr>`;
+            box.innerHTML = rows ? (rows + totalRow) : '<tr><td colspan="11" class="p-4 text-center text-slate-400">Henüz stok takibi yapılan ürün yok.</td></tr>';
         }
 
         // ====
@@ -3101,6 +3259,18 @@
                 ]);
             });
             csvDownload('hediye_raporu.csv', rows);
+        }
+
+        function exportCategoryStatsCSV() {
+            const rows = [['Kategori', 'Ürün Çeşidi', 'Üretilen', 'Hazır Alım', 'Satılan', 'Hediye', 'Kalan Stok', 'Satış/Giriş (%)', 'Ort. Satış Fiyatı (₺)', 'Toplam Ciro (₺)', 'Mutabakat Farkı']];
+            Object.entries(categoryStats()).sort((a, b) => ((b[1].produced + b[1].purchased) - (a[1].produced + a[1].purchased))).forEach(([cat, s]) => {
+                const giris = s.produced + s.purchased;
+                const oran = giris > 0 ? (s.sold / giris) * 100 : 0;
+                const avg = s.sold > 0 ? (s.ciro / s.sold) : 0;
+                const diff = giris - s.sold - s.gifted - s.stock;
+                rows.push([cat, s.models, s.produced, s.purchased, s.sold, s.gifted, s.stock, oran.toFixed(0), avg.toFixed(2).replace('.', ','), s.ciro.toFixed(2).replace('.', ','), (Math.abs(diff) < 0.001 ? 0 : diff)]);
+            });
+            csvDownload('kategori_uretim_satis_istatistigi.csv', rows);
         }
 
         // ====
