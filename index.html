@@ -235,6 +235,10 @@
                     <input type="checkbox" id="inp-fil-faturali" class="w-4 h-4 accent-emerald-600">
                     <label for="inp-fil-faturali" class="text-xs font-semibold text-slate-600 cursor-pointer" title="Faturalı alımda KDV giren olarak mahsuplaşır">Faturalı Alım</label>
                     </div>
+                    <div class="w-36">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tarih</label>
+                    <input type="date" id="inp-fil-date" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-sky-500">
+                    </div>
                     <button type="submit" class="bg-sky-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-sky-700 transition">Stok Ekle</button>
                     </form>
                     <div class="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs">
@@ -329,6 +333,16 @@
                     </button>
                 </div>
             </div>
+            <!-- Kategori bazlı stok ve potansiyel getiri özeti -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-packages text-emerald-500"></i> Kategori Bazlı Stok Özeti</h3>
+                    <span class="text-xs text-slate-400">Stoğunuzdaki ürünlerin kategoriye göre adet dağılımı ve verdiğiniz fiyatlara göre potansiyel getiri</span>
+                </div>
+                <div id="ui-cat-stock-summary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <!-- JS Injected -->
+                </div>
+            </div>
             <div id="ui-products-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 <!-- JS Injected -->
             </div>
@@ -409,7 +423,7 @@
                 <h2 class="text-2xl font-bold text-slate-800">Finans ve Nakit Akışı</h2>
                 <button onclick="openHistory('expense')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded font-semibold text-sm">Gider Geçmişi</button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-4">
                 <div class="bg-emerald-50 border border-emerald-200 p-5 rounded-xl">
                     <p class="text-sm font-semibold text-emerald-700 uppercase">Toplam Kasa Girişi</p>
                     <p class="text-3xl font-bold text-emerald-800 mt-2" id="ui-fin-in">0.00 ₺</p>
@@ -419,10 +433,15 @@
                     <p class="text-3xl font-bold text-rose-800 mt-2" id="ui-fin-out">0.00 ₺</p>
                 </div>
                 <div class="bg-sky-50 border border-sky-200 p-5 rounded-xl shadow-sm">
-                    <p class="text-sm font-semibold text-sky-700 uppercase">NET NAKİT</p>
+                    <p class="text-sm font-semibold text-sky-700 uppercase">NET NAKİT (GERÇEK KASA)</p>
                     <p class="text-3xl font-bold text-sky-800 mt-2" id="ui-fin-net">0.00 ₺</p>
                 </div>
+                <div class="bg-slate-100 border border-slate-300 p-5 rounded-xl">
+                    <p class="text-sm font-semibold text-slate-600 uppercase">Stoğa Bağlı Sermaye</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-2" id="ui-fin-stock">0.00 ₺</p>
+                </div>
             </div>
+            <p class="text-xs text-slate-500 mb-8">Net Nakit gerçek kasadır: tahsil edilen tüm paralar eksi ödenmiş tüm alım ve giderler. Malzeme tüketmek (üretim, fire) bu rakamı değiştirmez; para, malzemeyi aldığınız anda kasadan çıkmıştır. "Stoğa Bağlı Sermaye" ise hâlâ rafta duran filament, aksesuar ve bitmiş ürün stoğunuzun maliyet değeridir — borç değil, satışla geri gelecek varlıktır.</p>
 
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
                 <!-- Manuel Gider -->
@@ -559,7 +578,8 @@
                     <p class="text-[11px] text-slate-400 mt-2">Amortisman, yıllık raporlarda yalnızca cihazın alım yılından itibaren sayılır; sonradan eklenen bir demirbaş geçmiş yılların rakamlarını değiştirmez.</p>
                 </div>
 
-                <h3 class="font-bold text-slate-800 mb-3">12 Aylık Vergi Takvimi (<span id="cal-year">2026</span>)</h3>
+                <h3 class="font-bold text-slate-800 mb-1">12 Aylık Vergi Takvimi (<span id="cal-year">2026</span>)</h3>
+                <p class="text-[11px] text-slate-400 mb-3">Aylık kartlardaki "Alım + Gider (ödenen)" satırı: o ay ödenen filament, aksesuar ve hazır ürün alımları ile manuel kasa çıkışlarıdır (KDV dahil ödenen tutarlar). Raporlar'daki aylık giderden farkı: amortisman payı, geçici damga yayılımı (Raporlar yıllık toplamı aylara yayar; bu takvim gerçek ödeme aylarında gösterir) ve faturalı alımların Raporlar'da KDV hariç matrahla işlenmesidir.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="ui-months-grid">
                     <!-- JS Injected -->
                 </div>
@@ -1169,6 +1189,9 @@
         //  METE 3D STUDIO — ERP & MUHASEBE PRO
         //  Tek dosyalık çözüm: Firebase Firestore + localStorage yedek
         //  v7: Yıla özel ayarlar (settingsByYear) — geçmiş yılların rakamları donar
+        //  v8: Net Nakit gerçek kasaya çevrildi (tahsilat − tüm ödenmiş alım/giderler),
+        //      Finans'a "Stoğa Bağlı Sermaye" kartı, takvimde aylık "Alım + Gider (ödenen)"
+        //      mutabakat satırı, filament alım formuna tarih alanı
         // ====
 
         // --- Varsayılan Firebase Config (Ayarlar'dan değiştirilebilir) ---
@@ -1190,6 +1213,7 @@
         let currentRecipe = [];
         let posCart = [];
         let currentHistoryType = '';
+        let currentHistoryCtx = null; // Açık geçmiş penceresi bağlamı: {kind:'list',type} | {kind:'product',prodId} | {kind:'acc',accId}
         let editTarget = null;   // {type, id}
         let confirmAction = null;
         let currentYear = new Date().getFullYear();
@@ -1339,6 +1363,18 @@
                 if (o.paidDate === undefined) o.paidDate = '';
                 if (o.deliveryDate === undefined) o.deliveryDate = '';
                 if (o.stockDeducted === undefined) o.stockDeducted = true;
+                // Fiilen ürün stoğundan düşülen miktarların kaydı (mId → adet). Eski kayıtlarda yoksa
+                // mevcut kalemlerden türetilir; düzenle/sil işlemleri artık bu kaydı baz alır.
+                if (o.deducted === undefined || o.deducted === null || typeof o.deducted !== 'object' || Array.isArray(o.deducted)) {
+                    o.deducted = {};
+                    if (o.stockDeducted !== false) {
+                        (o.items || []).forEach(it => {
+                            const dm = st.models.find(x => x.id === it.mId);
+                            if (dm && (dm.ptype || 'uretilen') === 'hizmet') return;
+                            o.deducted[it.mId] = (o.deducted[it.mId] || 0) + (parseFloat(it.qty) || 0);
+                        });
+                    }
+                }
                 if (o.status === 'pending' && o.type === undefined) o.type = '';
                 const total = (o.items || []).reduce((s,it)=> s + ((it.qty||0) * (it.unitPrice||0)), 0);
                 if (!(o.total >= 0)) o.total = total;
@@ -1521,11 +1557,13 @@
             const pr = parseFloat($('inp-fil-price').value);
             if (!(gr > 0) || !(pr >= 0)) return alert('Geçerli miktar ve tutar girin.');
             const faturali = $('inp-fil-faturali').checked;
+            const filDate = $('inp-fil-date').value || todayStr();
             const br = kdvBreakdown(pr);
             state.filament.totalGr += gr;
             state.filament.totalCost += pr;
-            state.filamentLogs.push({ id: 'FL' + Date.now(), gr, pr, total: pr, faturali, matrah: faturali ? br.matrah : pr, kdv: faturali ? br.kdv : 0, date: new Date().toISOString() });
+            state.filamentLogs.push({ id: 'FL' + Date.now(), gr, pr, total: pr, faturali, matrah: faturali ? br.matrah : pr, kdv: faturali ? br.kdv : 0, date: new Date(filDate + 'T12:00:00').toISOString() });
             saveState(); renderAll(); e.target.reset();
+            $('inp-fil-date').value = todayStr();
         }
 
         function openAccessoryModal() {
@@ -1968,6 +2006,7 @@
 
             let tot = 0;
 
+            const deducted = {};
             const items = posCart.map(c => {
                 const m = state.models.find(x => x.id === c.mId);
                 const unitPrice = c.unitPrice ?? m.price ?? 0;
@@ -1975,19 +2014,21 @@
                 tot += unitPrice * qty;
                 const ptype = m.ptype || 'uretilen';
 
-                // Ürün stoğunu düş (hizmet ürünlerinde stok yok).
+                // Ürün stoğunu düş (hizmet ürünlerinde stok yok) ve fiilen düşülen miktarı kayda yaz.
                 // Hammadde/aksesuar düşümü artık ÜRETİM anında ("Ürüne Stok Ekle") yapılır;
                 // satışta yalnızca bitmiş ürün stoğu düşer — çift düşüm önlenir.
-                if (ptype !== 'hizmet') m.stock = (m.stock || 0) - qty;
+                if (ptype !== 'hizmet') { m.stock = (m.stock || 0) - qty; deducted[c.mId] = (deducted[c.mId] || 0) + qty; }
                 return { mId: c.mId, qty, unitPrice };
             });
 
-            // Satış anında fiyatlar KDV hariç matrah kabul edilir; faturalı teslimde KDV üstüne eklenir
+            // Satış anında fiyatlar KDV hariç matrah kabul edilir; faturalı teslimde KDV üstüne eklenir.
+            // "deducted" kaydı: bu siparişte fiilen ürün stoğundan düşülen miktarlar (mId → adet).
+            // Düzenle / sil / teslimi geri al işlemleri bu kaydı baz alır; hayali stok oluşmaz.
             state.orders.push({
                 id: 'ORD' + Date.now(), locId, items, total: tot, matrah: tot, kdv: 0,
                 status: 'pending', type: '', invoiceNo: '',
                 date: new Date().toISOString(), deliveryDate: '', paymentStatus: 'pending', dueDate: '', paidDate: '',
-                stockDeducted: true
+                deducted, stockDeducted: true
             });
             posCart = [];
             saveState(); renderAll(); closeModal('modal-pos');
@@ -2024,12 +2065,19 @@
 
             const o = state.orders.find(x => x.id === oId);
             if (o) {
-                // Teslimi geri alındıysa stok zaten geri eklenmişti; yeniden teslimde çift düşüm olmasın
+                // Teslimi geri alındıysa stok zaten geri eklenmişti; yeniden teslimde çift düşüm olmasın.
+                // Fiilen düşülen miktarlar "deducted" kaydına da yazılır; sil/düzenle bu kaydı baz alır.
                 if (o.stockDeducted === false) {
+                    const reDeducted = {};
                     (o.items || []).forEach(it => {
                         const m = state.models.find(x => x.id === it.mId);
-                        if (m && (m.ptype || 'uretilen') !== 'hizmet') m.stock = (m.stock || 0) - (parseFloat(it.qty) || 0);
+                        if (m && (m.ptype || 'uretilen') !== 'hizmet') {
+                            const q = parseFloat(it.qty) || 0;
+                            m.stock = (m.stock || 0) - q;
+                            reDeducted[it.mId] = (reDeducted[it.mId] || 0) + q;
+                        }
                     });
+                    o.deducted = reDeducted;
                     o.stockDeducted = true;
                 }
                 o.status = 'delivered';
@@ -2072,15 +2120,13 @@
         function undoDelivery(oId) {
             const o = state.orders.find(x => x.id === oId);
             if (!o || o.status !== 'delivered') return;
-            const needs = {};
-            (o.items || []).forEach(it => {
-                const m = state.models.find(x => x.id === it.mId);
-                if (m && (m.ptype || 'uretilen') !== 'hizmet') needs[it.mId] = (needs[it.mId] || 0) + (parseFloat(it.qty) || 0);
-            });
-            Object.entries(needs).forEach(([mId, qty]) => {
+            // Geri ekleme, siparişin FİİLEN düşülen miktar kaydına (o.deducted) göre yapılır;
+            // kayıt sıfırlanır ki sonraki sil/düzenle işlemlerinde çift iade olmasın.
+            Object.entries(o.deducted || {}).forEach(([mId, qty]) => {
                 const m = state.models.find(x => x.id === mId);
-                if (m) m.stock = (m.stock || 0) + qty;
+                if (m) m.stock = (m.stock || 0) + (parseFloat(qty) || 0);
             });
+            o.deducted = {};
             o.stockDeducted = false;
             o.status = 'pending';
             o.type = '';
@@ -2181,7 +2227,8 @@
         }
 
         // --- Finansal özet (tüm hesapların merkezi) ---
-        // Nakit akışı ve alacaklar tüm zamanları kapsar; vergi rakamları ise verilen yılın
+        // Nakit akışı ve alacaklar tüm zamanları kapsar; kasa çıkışı eldeki stok değerinden değil,
+        // YAPILMIŞ TÜM alım kayıtlarından toplanır (gerçek kasa). Vergi rakamları ise verilen yılın
         // kayıtları ve O YILIN ayarları (settingsByYear kopyası) ile hesaplanır.
         function finSummary(year) {
             const y = year || realYear();
@@ -2189,9 +2236,12 @@
             let cashIn = 0, cashOut = 0;
             state.orders.forEach(o => { if (o.status === 'delivered' && o.paymentStatus === 'paid') cashIn += (o.total || 0); });
             state.transactions.forEach(t => { if (t.type === 'in') cashIn += t.amount; else cashOut += t.amount; });
-            cashOut += state.filament.totalCost;
-            state.accessories.forEach(a => cashOut += (a.totalCost || 0));
-            // Hazır ürün alışları da kasa çıkışıdır
+            // Gerçek kasa mantığı: para, malzeme ALINDIĞI anda kasadan çıkmıştır; üretim/fire ile
+            // tüketmek para hareketi değildir. Bu yüzden çıkış, eldeki stok değeri yerine tüm alım
+            // kayıtlarından toplanır; alım kaydı silinirse kasa çıkışı da otomatik düşer.
+            state.filamentLogs.forEach(l => cashOut += (l.pr || 0));
+            state.accessoryLogs.forEach(l => cashOut += (l.total != null ? l.total : (l.price || 0)));
+            // Hazır ürün alışları da kasa çıkışıdır (üretim girişinde para çıkmaz; hammadde zaten ödenmişti)
             state.productStockLogs.forEach(l => { if (l.total) cashOut += l.total; });
             const netCash = cashIn - cashOut;
 
@@ -2241,6 +2291,8 @@
             renderAccounting();
             renderReports();
             renderSettings();
+            // Açık geçmiş penceresini canlı yenile: silinen kayıt ekrandan anında kalkar
+            refreshOpenHistory();
         }
 
         function populateCategorySelects() {
@@ -2263,7 +2315,7 @@
             $('dash-date').innerText = new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
             const kpis = [
-                { label: 'Net Nakit', val: fmt(fin.netCash), icon: 'ph-wallet', cls: 'bg-sky-50 border-sky-200 text-sky-800', ic: 'text-sky-500' },
+                { label: 'Net Nakit (Kasa)', val: fmt(fin.netCash), icon: 'ph-wallet', cls: 'bg-sky-50 border-sky-200 text-sky-800', ic: 'text-sky-500' },
                 { label: 'Toplam Ciro', val: fmt(fin.cashIn), icon: 'ph-chart-line-up', cls: 'bg-emerald-50 border-emerald-200 text-emerald-800', ic: 'text-emerald-500' },
                 { label: 'Bekleyen Sipariş', val: pendingCount + ' adet', icon: 'ph-clock', cls: 'bg-amber-50 border-amber-200 text-amber-800', ic: 'text-amber-500' },
                 { label: 'Alacaklar (Cari)', val: fmt(fin.alacak), icon: 'ph-handshake', cls: 'bg-purple-50 border-purple-200 text-purple-800', ic: 'text-purple-500' },
@@ -2352,6 +2404,8 @@
             $('ui-fil-avg').innerText = filAvg.toFixed(3) + ' ₺';
             const lowFil = state.filament.totalGr < state.settings.lowFilament;
             $('ui-fil-warn').innerHTML = lowFil ? '<span class="text-rose-500">⚠ Düşük stok!</span>' : '<span class="text-emerald-500">✓ Yeterli</span>';
+            const filDateEl = $('inp-fil-date');
+            if (filDateEl && !filDateEl.value) filDateEl.value = todayStr();
 
             const filFaturalilar = state.filamentLogs.filter(l => l.faturali);
             const totalInputKdv = filFaturalilar.reduce((s, l) => s + (l.kdv || 0), 0);
@@ -2397,9 +2451,58 @@
             saveState(); renderAll();
         }
 
+        // --- Kategori bazlı stok ve potansiyel getiri özeti (Ürünler sekmesi) ---
+        // Stoğu izlenen tüm ürünler (üretim + hazır) kategorisine göre gruplanır;
+        // her kategori için toplam stok adedi, verdiğiniz fiyata göre ortalama birim getiri
+        // ve tüm stok satılırsa elde edilecek toplam potansiyel getiri hesaplanır.
+        function renderCategoryStockSummary() {
+            const box = $('ui-cat-stock-summary');
+            if (!box) return;
+            const groups = {};
+            state.models.forEach(m => {
+                if ((m.ptype || 'uretilen') === 'hizmet') return; // hizmet ürünlerinde stok takibi yoktur
+                const cat = m.category || 'Diğer';
+                if (!groups[cat]) groups[cat] = { stock: 0, revenue: 0, cost: 0, kinds: 0 };
+                const st = Math.max(0, m.stock || 0);
+                groups[cat].stock += st;
+                groups[cat].revenue += (m.price || 0) * st;
+                groups[cat].cost += productCost(m) * st;
+                groups[cat].kinds += 1;
+            });
+            const cats = Object.keys(groups).sort((a, b) => groups[b].stock - groups[a].stock);
+            let totStock = 0, totRevenue = 0, totCost = 0;
+            const cards = cats.map(c => {
+                const g = groups[c];
+                totStock += g.stock; totRevenue += g.revenue; totCost += g.cost;
+                const avg = g.stock > 0 ? (g.revenue / g.stock) : 0;
+                return `
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <div class="flex items-center justify-between mb-2 gap-2">
+                    <span class="font-bold text-slate-700 text-sm truncate">${esc(c)}</span>
+                    <span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">${fmtN(g.stock)} adet</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-500"><span>Ürün Çeşidi:</span><span class="font-semibold text-slate-700">${fmtN(g.kinds)}</span></div>
+                    <div class="flex justify-between text-xs text-slate-500 mt-1"><span>Ort. Birim Fiyat:</span><span class="font-semibold text-slate-700">${fmt(avg)}</span></div>
+                    <div class="flex justify-between text-xs text-slate-500 mt-1"><span>Potansiyel Getiri:</span><span class="font-semibold text-emerald-700">${fmt(g.revenue)}</span></div>
+                    <div class="flex justify-between text-xs text-slate-500 mt-1"><span>Stok Maliyeti:</span><span class="font-semibold text-slate-600">${fmt(g.cost)}</span></div>
+                    <div class="flex justify-between text-xs text-slate-500 mt-1 border-t border-slate-200 pt-1"><span>Net Potansiyel Kâr:</span><span class="font-semibold ${g.revenue - g.cost >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${fmt(g.revenue - g.cost)}</span></div>
+                </div>`;
+            }).join('');
+            const totalCard = `
+                <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                    <div class="flex items-center justify-between mb-2 gap-2">
+                    <span class="font-bold text-emerald-800 text-sm">GENEL TOPLAM</span>
+                    <span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded font-bold whitespace-nowrap">${fmtN(totStock)} adet</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-emerald-700 mt-1"><span>Toplam Potansiyel Getiri:</span><span class="font-bold">${fmt(totRevenue)}</span></div>
+                </div>`;
+            box.innerHTML = cards ? (cards + totalCard) : '<p class="text-center text-slate-400 text-sm py-4 col-span-full">Henüz stok takibi yapılan ürün yok.</p>';
+        }
+
         // --- Ürünler ---
         function renderProducts() {
             populateCategorySelects();
+            renderCategoryStockSummary();
             const q = ($('inp-prod-search').value || '').toLowerCase().trim();
             const cat = $('inp-prod-cat-filter') ? $('inp-prod-cat-filter').value : '';
             const list = state.models
@@ -2539,6 +2642,11 @@
             $('ui-fin-in').innerText = fmt(fin.cashIn);
             $('ui-fin-out').innerText = fmt(fin.cashOut);
             $('ui-fin-net').innerText = fmt(fin.netCash);
+            // Stoğa Bağlı Sermaye: hâlâ rafta duran filament + aksesuar + bitmiş ürün stoğunun maliyet değeri
+            const stockCap = (state.filament.totalCost || 0)
+                + state.accessories.reduce((s, a) => s + (a.totalCost || 0), 0)
+                + state.models.reduce((s, m) => ((m.ptype || 'uretilen') !== 'hizmet') ? (s + productCost(m) * Math.max(0, m.stock || 0)) : s, 0);
+            if ($('ui-fin-stock')) $('ui-fin-stock').innerText = fmt(stockCap);
 
             const cari = state.orders.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending');
             $('ui-cari-total').innerText = fmt(fin.alacak);
@@ -2652,6 +2760,15 @@
             state.transactions.forEach(t => { if (t.type === 'out' && t.faturali) addKdvGiren(t.date, t.kdv, t.amount || 0); });
             state.productStockLogs.forEach(l => { if (l.total && l.faturali) addKdvGiren(l.date, l.kdv, l.total || 0); });
 
+            // Mutabakat için ay bazlı alım + gider (ödenen tutarlar, KDV dahil): takvimdeki aylık
+            // toplamı Raporlar'daki aylık giderle karşılaştırırken kullanılan kalemdir.
+            const alimByMonth = Array(12).fill(0);
+            const addAlim = (date, amt) => { const d = new Date(date); if (d.getFullYear() !== y) return; alimByMonth[d.getMonth()] += (amt || 0); };
+            state.filamentLogs.forEach(l => addAlim(l.date, l.pr || 0));
+            state.accessoryLogs.forEach(l => addAlim(l.date, l.total != null ? l.total : (l.price || 0)));
+            state.transactions.forEach(t => { if (t.type === 'out') addAlim(t.date, t.amount || 0); });
+            state.productStockLogs.forEach(l => { if (l.total) addAlim(l.date, l.total || 0); });
+
             // Çeyreklik matrah (geçici vergi için) — yalnızca seçili yıl
             const qGelir = [0, 0, 0, 0], qGider = [0, 0, 0, 0];
             state.orders.forEach(o => {
@@ -2687,6 +2804,9 @@
                 let mF = s.musavir + s.kdvDamga + s.muhtasarDamga;
                 let tags = '';
                 let kdvLine = '';
+                let alimLine = '';
+                const ayAlim = alimByMonth[i];
+                if (ayAlim > 0.5) alimLine = `<div class="flex justify-between text-slate-500 text-xs mb-1"><span>Alım + Gider (ödenen):</span> <span class="font-semibold text-slate-700">${fmt(ayAlim)}</span></div>`;
                 const netKdv = kdvByMonth[i];
                 if (netKdv > 0.5) kdvLine = `<div class="flex justify-between text-rose-600 text-xs font-semibold"><span>Ödenecek KDV:</span><span>${fmt(netKdv)}</span></div>`;
                 else if (netKdv < -0.5) kdvLine = `<div class="flex justify-between text-emerald-600 text-xs font-semibold"><span>Devreden KDV:</span><span>${fmt(-netKdv)}</span></div>`;
@@ -2701,6 +2821,7 @@
                 return `<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm text-sm">
                     <div class="font-bold border-b pb-1 mb-2 flex justify-between items-center"><span>${mName} ${currentYear}</span>${i === 2 ? '<span class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">Beyan</span>' : ''}</div>
                     <div class="flex justify-between text-slate-500 text-xs mb-1"><span>Sabit Giderler:</span> <span class="font-semibold text-slate-700">${fmt(mF)}</span></div>
+                    ${alimLine}
                     ${kdvLine}
                     ${tags}
                 </div>`;
@@ -2989,6 +3110,29 @@
 
         function openHistory(type) {
             currentHistoryType = type;
+            currentHistoryCtx = { kind: 'list', type };
+            renderHistoryList(type);
+            openModal('modal-history');
+        }
+
+        // Açık geçmiş penceresini bağlama göre yeniden çizer; kayıt silinince satır ekranda
+        // anında kalkar (ekran yenilemeye gerek kalmaz). Pencere kapalıysa hiçbir şey yapmaz;
+        // ürün/aksesuar silindiyse pencere otomatik kapatılır.
+        function refreshOpenHistory() {
+            const modal = $('modal-history');
+            if (!modal || modal.classList.contains('hidden') || !currentHistoryCtx) return;
+            if (currentHistoryCtx.kind === 'list') { renderHistoryList(currentHistoryCtx.type); return; }
+            if (currentHistoryCtx.kind === 'product') {
+                if (!renderProductHistory(currentHistoryCtx.prodId)) { currentHistoryCtx = null; closeModal('modal-history'); }
+                return;
+            }
+            if (currentHistoryCtx.kind === 'acc') {
+                if (!renderAccessoryHistory(currentHistoryCtx.accId)) { currentHistoryCtx = null; closeModal('modal-history'); }
+                return;
+            }
+        }
+
+        function renderHistoryList(type) {
             const titles = { sales: 'Satış / Sipariş Geçmişi', filament: 'Filament Alım Geçmişi', accessory: 'Aksesuar Alım Geçmişi', expense: 'Gider Geçmişi' };
             $('hist-title').innerText = titles[type] || 'Geçmiş Kayıtlar';
             let head = '', rows = '';
@@ -3018,12 +3162,18 @@
             }
             $('hist-thead').innerHTML = head;
             $('hist-tbody').innerHTML = rows || histEmpty(7);
-            openModal('modal-history');
         }
 
         function openProductHistory(prodId) {
+            if (!state.models.find(x => x.id === prodId)) return;
+            currentHistoryCtx = { kind: 'product', prodId };
+            renderProductHistory(prodId);
+            openModal('modal-history');
+        }
+
+        function renderProductHistory(prodId) {
             const m = state.models.find(x => x.id === prodId);
-            if (!m) return;
+            if (!m) return false;
             $('hist-title').innerText = 'Stok Geçmişi: ' + m.name;
             $('hist-thead').innerHTML = '<tr><th class="p-2">Tarih</th><th class="p-2 text-center">Adet</th><th class="p-2">Kullanılan Hammadde</th><th class="p-2 text-right">Birim Alış</th><th class="p-2 text-right">Toplam</th><th class="p-2">Fatura</th><th class="p-2">Not</th><th class="p-2 text-center">İşlem</th></tr>';
             const logs = state.productStockLogs.filter(l => l.productId === prodId).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -3038,30 +3188,41 @@
                 }
                 return `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 text-center font-bold text-emerald-700">+${l.qty}</td><td class="p-2 text-xs">${matHtml}</td><td class="p-2 text-right">${l.unitCost != null ? l.unitCost.toFixed(2) + ' ₺' : '-'}</td><td class="p-2 text-right">${l.total != null ? fmt(l.total) : '-'}</td><td class="p-2">${l.faturali ? 'Faturalı' : (l.unitCost != null ? 'Faturasız' : '-')}</td><td class="p-2">${esc(l.note || '')}</td><td class="p-2 text-center"><button onclick="deleteLog('productStock','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`;
             }).join('') || histEmpty(8);
-            openModal('modal-history');
+            return true;
         }
 
         function openAccessoryHistory(accId) {
+            if (!state.accessories.find(x => x.id === accId)) return;
+            currentHistoryCtx = { kind: 'acc', accId };
+            renderAccessoryHistory(accId);
+            openModal('modal-history');
+        }
+
+        function renderAccessoryHistory(accId) {
             const a = state.accessories.find(x => x.id === accId);
-            if (!a) return;
+            if (!a) return false;
             $('hist-title').innerText = 'Alım Geçmişi: ' + a.name;
             $('hist-thead').innerHTML = '<tr><th class="p-2">Tarih</th><th class="p-2 text-center">Adet</th><th class="p-2 text-right">Birim</th><th class="p-2 text-right">Toplam</th><th class="p-2">Fatura</th><th class="p-2">Not</th><th class="p-2 text-center">İşlem</th></tr>';
             const logs = state.accessoryLogs.filter(l => l.accId === accId).sort((x, y) => new Date(y.date) - new Date(x.date));
             $('hist-tbody').innerHTML = logs.map(l =>
                 `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 text-center font-bold text-purple-700">+${l.qty}</td><td class="p-2 text-right">${(l.unitPrice || 0).toFixed(2)} ₺</td><td class="p-2 text-right">${fmt(l.total != null ? l.total : (l.price || 0))}</td><td class="p-2">${l.faturali ? 'Faturalı' : 'Faturasız'}</td><td class="p-2">${esc(l.note || '')}</td><td class="p-2 text-center"><button onclick="deleteLog('accessory','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`
             ).join('') || histEmpty(7);
-            openModal('modal-history');
+            return true;
         }
 
         function deleteLog(type, id) {
             if (type === 'sales') {
                 const o = state.orders.find(x => x.id === id);
                 if (!o) return;
-                askConfirm('Sipariş silinecek ve ürün stoğu geri eklenecek (filament/aksesuar düşümü geri gelmez). Emin misiniz?', () => {
+                askConfirm('Sipariş silinecek ve fiilen düşülmüş ürün stoğu geri eklenecek (filament/aksesuar düşümü geri gelmez). Emin misiniz?', () => {
+                    // İade, siparişin FİİLEN düşülen miktar kaydına (o.deducted) göre yapılır.
+                    // Düzenle ile sonradan eklenip stoğa hiç işlenmemiş kalemler geri eklenmez
+                    // (hayali stok oluşmaz); teslimi geri alınmış siparişte deducted boş
+                    // olduğundan çift iade de yaşanmaz.
                     if (o.stockDeducted !== false) {
-                        (o.items || []).forEach(it => {
-                            const m = state.models.find(x => x.id === it.mId);
-                            if (m && (m.ptype || 'uretilen') !== 'hizmet') m.stock = (m.stock || 0) + (parseFloat(it.qty) || 0);
+                        Object.entries(o.deducted || {}).forEach(([mId, qty]) => {
+                            const m = state.models.find(x => x.id === mId);
+                            if (m) m.stock = (m.stock || 0) + (parseFloat(qty) || 0);
                         });
                     }
                     state.orders = state.orders.filter(x => x.id !== id);
@@ -3343,23 +3504,33 @@
             const newStatus = $('m-ord-status').value;
             const tracked = it => { const m = state.models.find(x => x.id === it.mId); return (m && (m.ptype || 'uretilen') !== 'hizmet') ? m : null; };
 
-            // Stok farkını hesapla (hizmet ürünleri hariç): eski kalemler geri eklenir, yeniler düşülür
+            // Stok farkı, siparişin FİİLEN düşülen miktar kaydı (o.deducted) üzerinden hesaplanır:
+            // daha önce fiilen düşülen miktarlar stoğa geri eklenir, yeni durumda düşülmesi gerekenler düşülür.
+            // Böylece düzenle-sil-geri al işlemleri her zaman gerçek stok hareketiyle eşleşir (hayali stok oluşmaz).
             const delta = {};
-            if (o.stockDeducted !== false) {
-                (o.items || []).forEach(it => { if (tracked(it)) delta[it.mId] = (delta[it.mId] || 0) + (parseFloat(it.qty) || 0); });
-                orderEditItems.forEach(it => { if (tracked(it)) delta[it.mId] = (delta[it.mId] || 0) - (parseFloat(it.qty) || 0); });
-            } else if (newStatus === 'delivered') {
-                orderEditItems.forEach(it => { if (tracked(it)) delta[it.mId] = (delta[it.mId] || 0) - (parseFloat(it.qty) || 0); });
+            const wasDeducted = o.stockDeducted !== false;
+            const baseDeducted = wasDeducted ? (o.deducted || {}) : {};
+            Object.entries(baseDeducted).forEach(([mId, q]) => { delta[mId] = (delta[mId] || 0) + (parseFloat(q) || 0); });
+            const newDeducted = {};
+            if (wasDeducted || newStatus === 'delivered') {
+                orderEditItems.forEach(it => {
+                    if (!tracked(it)) return;
+                    const q = parseFloat(it.qty) || 0;
+                    delta[it.mId] = (delta[it.mId] || 0) - q;
+                    newDeducted[it.mId] = (newDeducted[it.mId] || 0) + q;
+                });
             }
             for (const [mId, d] of Object.entries(delta)) {
+                if (d >= 0) continue; // yalnızca net düşüş gereken kalemler stok yeterliliği kontrolünden geçer
                 const m = state.models.find(x => x.id === mId);
-                if (m && ((m.stock || 0) - d) < 0) return alert('Stok yetersiz: ' + m.name + ' (mevcut: ' + (m.stock || 0) + ').');
+                if (m && ((m.stock || 0) + d) < 0) return alert('Stok yetersiz: ' + m.name + ' (mevcut: ' + (m.stock || 0) + ').');
             }
             Object.entries(delta).forEach(([mId, d]) => {
                 const m = state.models.find(x => x.id === mId);
-                if (m) m.stock = (m.stock || 0) - d;
+                if (m) m.stock = (m.stock || 0) + d;
             });
-            if (o.stockDeducted === false && newStatus === 'delivered') o.stockDeducted = true;
+            o.stockDeducted = wasDeducted || newStatus === 'delivered';
+            o.deducted = newDeducted;
 
             // Alanları güncelle
             o.locId = $('m-ord-dealer').value;
