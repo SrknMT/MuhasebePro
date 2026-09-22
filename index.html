@@ -30,6 +30,16 @@
         @import url('https://placehold.co/1200x800/e8e6e3/e8e6e3');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #1e293b; overflow: hidden; }
 
+        /* Tüm number input'lardaki yukarı/aşağı ok butonlarını (spinner) kaldır */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -233,6 +243,10 @@
                     <p class="text-2xl font-bold text-slate-800" id="ui-fil-avg">0.00 ₺</p>
                     </div>
                     </div>
+<div class="flex items-center justify-between bg-sky-50 border border-sky-100 rounded-lg px-4 py-2.5 mb-5 text-sm">
+                        <span class="font-semibold text-sky-800"><i class="ph-fill ph-coins"></i> Kalan Filament Stok Değeri</span>
+                        <b class="text-sky-900" id="ui-fil-value">0.00 ₺</b>
+                    </div>
                     <form onsubmit="addFilament(event)" class="flex gap-3 items-end mt-auto flex-wrap">
                     <div class="flex-1 min-w-[120px]">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Yeni Alım (Gram)</label>
@@ -272,6 +286,10 @@
                     <button onclick="openHistory('accessory')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-semibold transition">Geçmiş</button>
                     <button onclick="openAccessoryModal()" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded font-semibold transition">+ Aksesuar</button>
                     </div>
+                    </div>
+<div class="flex items-center justify-between bg-purple-50 border border-purple-100 rounded-lg px-4 py-2.5 mb-3 text-sm">
+                        <span class="font-semibold text-purple-800"><i class="ph-fill ph-coins"></i> Toplam Aksesuar Stok Değeri</span>
+                        <b class="text-purple-900" id="ui-acc-value">0.00 ₺</b>
                     </div>
                     <div class="overflow-y-auto flex-1 border border-slate-100 rounded-lg max-h-[320px]">
                     <table class="w-full text-left text-sm whitespace-nowrap">
@@ -361,7 +379,10 @@
 
         <!-- ==== TAB 3: BAYİLER & PLATFORMLAR ==== -->
         <div id="tab-dealers" class="tab-content hidden flex-col h-full overflow-y-auto p-6">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">Bayiler ve Satış Platformları</h2>
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Bayiler ve Satış Platformları</h2>
+                <p class="text-sm text-slate-500 mt-1">Bayi kartları yalnızca özet gösterir; bir bayinin tüm siparişlerini görmek için karttaki "Sipariş Geçmişi" butonuna basın — geçmiş ayrı pencerede açılır.</p>
+            </div>
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
                 <form onsubmit="addDealer(event)" class="flex gap-4 items-end flex-wrap">
                     <div class="flex-1 min-w-[200px]">
@@ -396,7 +417,10 @@
         <!-- ==== TAB 4: SİPARİŞ KANBAN ==== -->
         <div id="tab-kanban" class="tab-content hidden flex-col h-full overflow-hidden p-6">
             <div class="flex justify-between items-center mb-6 flex-shrink-0 flex-wrap gap-4">
-                <h2 class="text-2xl font-bold text-slate-800">Sipariş İş Akışı (Kanban)</h2>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Sipariş İş Akışı (Kanban)</h2>
+                    <p class="text-xs text-slate-500 mt-1">Pano yalnızca aktif işleri gösterir: teslim edilip tahsil edilen siparişler panodan otomatik kalkar. Kayıtlar silinmez; Satış Geçmişi'nde ve bayi kartlarındaki Sipariş Geçmişi penceresinde izlenir.</p>
+                </div>
                 <div class="flex gap-3">
                     <button onclick="openHistory('sales')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">Satış Geçmişi</button>
                     <button onclick="openOrderModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm">+ Yeni Sipariş (POS)</button>
@@ -418,7 +442,7 @@
                 <!-- Column: Delivered -->
                 <div class="flex-1 min-w-[300px] bg-slate-100 rounded-xl flex flex-col border border-slate-200 overflow-hidden">
                     <div class="p-3 border-b border-slate-200 bg-white/50 rounded-t-xl shrink-0 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="ph-fill ph-check-circle text-emerald-500"></i> Teslim Edildi</h3>
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="ph-fill ph-check-circle text-emerald-500"></i> Teslim Edildi (Tahsilat Bekliyor)</h3>
                     <span id="kanban-delivered-count" class="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">0</span>
                     </div>
                     <div id="kanban-delivered" class="p-3 flex-1 flex flex-col gap-3 overflow-y-auto opacity-90">
@@ -450,6 +474,11 @@
                 <div class="bg-slate-100 border border-slate-300 p-5 rounded-xl">
                     <p class="text-sm font-semibold text-slate-600 uppercase">Stoğa Bağlı Sermaye</p>
                     <p class="text-3xl font-bold text-slate-800 mt-2" id="ui-fin-stock">0.00 ₺</p>
+                    <div class="mt-3 pt-3 border-t border-slate-300 space-y-1 text-xs text-slate-600">
+                        <div class="flex justify-between gap-2"><span>Filament stoğu:</span><b class="text-slate-700" id="ui-fin-stock-fil">0 ₺</b></div>
+                        <div class="flex justify-between gap-2"><span>Aksesuar stoğu:</span><b class="text-slate-700" id="ui-fin-stock-acc">0 ₺</b></div>
+                        <div class="flex justify-between gap-2"><span>Bitmiş ürün stoğu:</span><b class="text-slate-700" id="ui-fin-stock-prd">0 ₺</b></div>
+                    </div>
                 </div>
             </div>
             <p class="text-xs text-slate-500 mb-8">Net Nakit gerçek kasadır: tahsil edilen tüm paralar eksi ödenmiş tüm alım ve giderler. Malzeme tüketmek (üretim, fire) bu rakamı değiştirmez; para, malzemeyi aldığınız anda kasadan çıkmıştır. "Stoğa Bağlı Sermaye" ise hâlâ rafta duran filament, aksesuar ve bitmiş ürün stoğunuzun maliyet değeridir — borç değil, satışla geri gelecek varlıktır.</p>
@@ -953,7 +982,7 @@
     </div>
 
     <!-- ==== MODAL: TESLİMAT ==== -->
-    <div id="modal-delivery" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+    <div id="modal-delivery" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-[55] p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
             <div class="p-5 border-b border-slate-100 bg-sky-50 rounded-t-xl">
                 <h3 class="font-bold text-lg text-sky-900 flex items-center gap-2"><i class="ph-fill ph-check-circle"></i> Siparişi Teslim Et</h3>
@@ -2589,6 +2618,8 @@
             const filAvg = state.filament.totalGr > 0 ? (state.filament.totalCost / state.filament.totalGr) : 0;
             $('ui-fil-stock').innerText = fmtN(state.filament.totalGr) + ' gr';
             $('ui-fil-avg').innerText = filAvg.toFixed(3) + ' ₺';
+if ($('ui-fil-value')) $('ui-fil-value').innerText = fmt(state.filament.totalCost || 0);
+            if ($('ui-acc-value')) $('ui-acc-value').innerText = fmt(state.accessories.reduce((s, a) => s + (a.totalCost || 0), 0));
             const lowFil = state.filament.totalGr < state.settings.lowFilament;
             $('ui-fil-warn').innerHTML = lowFil ? '<span class="text-rose-500">⚠ Düşük stok!</span>' : '<span class="text-emerald-500">✓ Yeterli</span>';
             const filDateEl = $('inp-fil-date');
@@ -2742,6 +2773,8 @@
             saveState(); renderAll();
         }
         // --- Bayiler ---
+        // Kartlar yalnızca özet gösterir (ciro, alacak, sipariş sayısı); sipariş geçmişi,
+        // kartın şişmesini önlemek için "Sipariş Geçmişi" penceresinde açılır.
         function renderDealers() {
             const filter = $('inp-dealer-filter') ? $('inp-dealer-filter').value : '';
             const dealers = state.dealers.filter(d => !filter || (d.category || d.type) === filter);
@@ -2749,25 +2782,8 @@
                 const dOrds = state.orders.filter(o => o.locId === d.id);
                 const vol = dOrds.reduce((s, o) => s + (o.total || 0), 0);
                 const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + (o.total || 0), 0);
-                const ordersHtml = dOrds.length ? dOrds.map(o => {
-                    const itemsText = (o.items || []).map(i => {
-                    const m = state.models.find(x => x.id === i.mId);
-                    return `${i.qty}x ${m ? m.name : 'Ürün'}`;
-                    }).join(', ');
-                    const stLabel = o.status === 'pending' ? 'Bekliyor' : (o.paymentStatus === 'paid' ? 'Tahsil Edildi' : 'Teslim/Alacak');
-                    return `<div class="border border-slate-200 rounded p-2 text-xs bg-slate-50">
-                    <div class="flex justify-between"><b>${new Date(o.date).toLocaleDateString('tr-TR')}</b><span>${stLabel}</span></div>
-                    <div class="mt-1">${esc(itemsText)}</div>
-                    <div class="mt-1">Toplam: <b>${fmt(o.total)}</b> · ${o.type ? ('Fatura: ' + o.type + (o.invoiceNo ? ' #' + esc(o.invoiceNo) : '')) : 'Fatura: Bekliyor'}</div>
-                    <div>${o.dueDate ? ('Vade: ' + new Date(o.dueDate).toLocaleDateString('tr-TR')) : ''} ${o.deliveryDate ? ('· Teslim: ' + new Date(o.deliveryDate).toLocaleDateString('tr-TR')) : ''}</div>
-                    <div class="mt-2 flex gap-1">
-                    <button onclick="openOrderEditModal('${o.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold">Siparişi Düzenle</button>
-                    <button onclick="askConfirm('Bu sipariş silinecek. Emin misiniz?', ()=>deleteLog('sales', '${o.id}'))" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Siparişi Sil</button>
-                    </div>
-                    </div>`;
-                }).join('') : '<p class="text-xs text-slate-400">Sipariş geçmişi yok.</p>' ;
-
-                return `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                const uretimde = dOrds.filter(o => o.status === 'pending').length;
+                return `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                     <div class="flex justify-between items-start">
                     <div>
                     <h3 class="font-bold text-slate-800">${esc(d.name)}</h3>
@@ -2778,11 +2794,14 @@
                     <button onclick="askConfirm('Bu bayi silinecek. Emin misiniz?', ()=>deleteDealer('${d.id}'))" class="text-rose-500 hover:bg-rose-50 p-1 rounded"><i class="ph-bold ph-trash"></i></button>
                     </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 text-sm mb-3">
-                    <div class="font-semibold text-sky-700 bg-sky-50 p-2 rounded">Ciro: ${fmt(vol)}</div>
-                    <div class="font-semibold ${alacak > 0 ? 'text-purple-700 bg-purple-50' : 'text-slate-500 bg-slate-50'} p-2 rounded">Alacak: ${fmt(alacak)}</div>
+                    <div class="grid grid-cols-3 gap-2 text-sm mb-3">
+                    <div class="font-semibold text-sky-700 bg-sky-50 p-2 rounded text-center"><span class="block text-[10px] uppercase text-sky-500">Ciro</span>${fmt(vol)}</div>
+                    <div class="font-semibold ${alacak > 0 ? 'text-purple-700 bg-purple-50' : 'text-slate-500 bg-slate-50'} p-2 rounded text-center"><span class="block text-[10px] uppercase ${alacak > 0 ? 'text-purple-500' : 'text-slate-400'}">Alacak</span>${fmt(alacak)}</div>
+                    <div class="font-semibold text-slate-600 bg-slate-50 p-2 rounded text-center"><span class="block text-[10px] uppercase text-slate-400">Sipariş</span>${dOrds.length}</div>
                     </div>
-                    <div class="space-y-2 max-h-52 overflow-y-auto">${ordersHtml}</div>
+                    <button onclick="openDealerHistory('${d.id}')" class="mt-auto w-full bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition">
+                    <i class="ph-bold ph-clock-counter-clockwise"></i> Sipariş Geçmişi (${dOrds.length}${uretimde > 0 ? ' · ' + uretimde + ' üretimde' : ''})
+                    </button>
                 </div>`;
             }).join('') || '<p class="text-center text-slate-400 text-sm py-8 col-span-full">Filtreye uygun bayi yok.</p>';
         }
@@ -2791,6 +2810,10 @@
         function renderKanban() {
             let kp = '', kd = '';
             state.orders.forEach(o => {
+                // İşi biten siparişler (teslim edilip tahsil edilenler) panoda kalabalık yapmasın:
+                // pano yalnızca aktif işleri gösterir; biten kayıtlar Satış Geçmişi'nde ve bayi
+                // kartlarındaki "Sipariş Geçmişi" penceresinde izlenmeye devam eder.
+                if (o.status === 'delivered' && o.paymentStatus === 'paid') return;
                 const d = state.dealers.find(x => x.id === o.locId);
                 const dt = new Date(o.date).toLocaleDateString('tr-TR');
                 let itms = (o.items || []).map(i => { const m = state.models.find(x => x.id === i.mId); return `${i.qty}x ${m ? m.name : ''}`; }).join(', ');
@@ -2818,9 +2841,9 @@
                 if (o.status === 'pending') kp += card; else kd += card;
             });
             $('kanban-pending').innerHTML = kp || '<p class="text-center text-slate-400 text-sm py-4">Bekleyen sipariş yok.</p>';
-            $('kanban-delivered').innerHTML = kd || '<p class="text-center text-slate-400 text-sm py-4">Teslimat yok.</p>';
+            $('kanban-delivered').innerHTML = kd || '<p class="text-center text-slate-400 text-sm py-4">Tahsilat bekleyen teslimat yok.</p>';
             $('kanban-pending-count').innerText = state.orders.filter(o => o.status === 'pending').length;
-            $('kanban-delivered-count').innerText = state.orders.filter(o => o.status === 'delivered').length;
+            $('kanban-delivered-count').innerText = state.orders.filter(o => o.status === 'delivered' && o.paymentStatus !== 'paid').length;
         }
 
         // --- Finans ---
@@ -2830,10 +2853,15 @@
             $('ui-fin-out').innerText = fmt(fin.cashOut);
             $('ui-fin-net').innerText = fmt(fin.netCash);
             // Stoğa Bağlı Sermaye: hâlâ rafta duran filament + aksesuar + bitmiş ürün stoğunun maliyet değeri
-            const stockCap = (state.filament.totalCost || 0)
-                + state.accessories.reduce((s, a) => s + (a.totalCost || 0), 0)
-                + state.models.reduce((s, m) => ((m.ptype || 'uretilen') !== 'hizmet') ? (s + productCost(m) * Math.max(0, m.stock || 0)) : s, 0);
+            // (Toplam hesabı değişmedi; yalnızca üç bileşeni ayrı ayrı da gösteriliyor.)
+            const stockFil = state.filament.totalCost || 0;
+            const stockAcc = state.accessories.reduce((s, a) => s + (a.totalCost || 0), 0);
+            const stockPrd = state.models.reduce((s, m) => ((m.ptype || 'uretilen') !== 'hizmet') ? (s + productCost(m) * Math.max(0, m.stock || 0)) : s, 0);
+            const stockCap = stockFil + stockAcc + stockPrd;
             if ($('ui-fin-stock')) $('ui-fin-stock').innerText = fmt(stockCap);
+            if ($('ui-fin-stock-fil')) $('ui-fin-stock-fil').innerText = fmt(stockFil);
+            if ($('ui-fin-stock-acc')) $('ui-fin-stock-acc').innerText = fmt(stockAcc);
+            if ($('ui-fin-stock-prd')) $('ui-fin-stock-prd').innerText = fmt(stockPrd);
 
             const cari = state.orders.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending');
             $('ui-cari-total').innerText = fmt(fin.alacak);
@@ -3379,6 +3407,10 @@
                 if (!renderAccessoryHistory(currentHistoryCtx.accId)) { currentHistoryCtx = null; closeModal('modal-history'); }
                 return;
             }
+            if (currentHistoryCtx.kind === 'dealer') {
+                if (!renderDealerHistory(currentHistoryCtx.dealerId)) { currentHistoryCtx = null; closeModal('modal-history'); }
+                return;
+            }
         }
 
         function renderHistoryList(type) {
@@ -3456,6 +3488,56 @@
             $('hist-tbody').innerHTML = logs.map(l =>
                 `<tr><td class="p-2">${new Date(l.date).toLocaleDateString('tr-TR')}</td><td class="p-2 text-center font-bold text-purple-700">+${l.qty}</td><td class="p-2 text-right">${(l.unitPrice || 0).toFixed(2)} ₺</td><td class="p-2 text-right">${fmt(l.total != null ? l.total : (l.price || 0))}</td><td class="p-2">${l.faturali ? 'Faturalı' : 'Faturasız'}</td><td class="p-2">${esc(l.note || '')}</td><td class="p-2 text-center"><button onclick="deleteLog('accessory','${l.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button></td></tr>`
             ).join('') || histEmpty(7);
+            return true;
+        }
+// ====
+        //  BAYİ SİPARİŞ GEÇMİŞİ (popup)
+        //  Bayi kartları şişmesin diye siparişler bu pencerede listelenir;
+        //  teslim / tahsilat / düzenleme işlemleri de buradan yapılabilir.
+        // ====
+        function openDealerHistory(dealerId) {
+            if (!state.dealers.find(x => x.id === dealerId)) return;
+            currentHistoryCtx = { kind: 'dealer', dealerId };
+            renderDealerHistory(dealerId);
+            openModal('modal-history');
+        }
+
+        function renderDealerHistory(dealerId) {
+            const d = state.dealers.find(x => x.id === dealerId);
+            if (!d) return false;
+            const dOrds = state.orders.filter(o => o.locId === dealerId).sort((a, b) => new Date(b.date) - new Date(a.date));
+            const vol = dOrds.reduce((s, o) => s + (o.total || 0), 0);
+            const alacak = dOrds.filter(o => o.status === 'delivered' && o.paymentStatus === 'pending').reduce((s, o) => s + (o.total || 0), 0);
+            $('hist-title').innerText = 'Sipariş Geçmişi: ' + d.name + ' — ' + dOrds.length + ' sipariş · Ciro: ' + fmt(vol) + (alacak > 0 ? ' · Alacak: ' + fmt(alacak) : '');
+            $('hist-thead').innerHTML = '<tr><th class="p-2">Tarih</th><th class="p-2">Ürünler</th><th class="p-2 text-right">Tutar</th><th class="p-2">Fatura</th><th class="p-2">Durum</th><th class="p-2">Vade / Teslim</th><th class="p-2 text-center">İşlem</th></tr>';
+            $('hist-tbody').innerHTML = dOrds.map(o => {
+                const items = (o.items || []).map(i => { const m = state.models.find(x => x.id === i.mId); return (i.qty || 0) + 'x ' + (m ? m.name : '?'); }).join(', ');
+                const st = o.status === 'pending' ? 'Bekliyor' : (o.paymentStatus === 'paid' ? 'Teslim / Tahsil Edildi' : 'Teslim / Alacak');
+                const dates = [
+                    o.dueDate ? 'Vade: ' + new Date(o.dueDate).toLocaleDateString('tr-TR') : '',
+                    o.deliveryDate ? 'Teslim: ' + new Date(o.deliveryDate).toLocaleDateString('tr-TR') : ''
+                ].filter(Boolean).join(' · ') || '-';
+                let actions = '';
+                if (o.status === 'pending') {
+                    actions = `<button onclick="promptDelivery('${o.id}')" class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Teslim Et</button>`;
+                } else {
+                    actions = (o.paymentStatus === 'pending'
+                        ? `<button onclick="collectPayment('${o.id}')" class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Tahsil Et</button>`
+                        : `<button onclick="undoCollectPayment('${o.id}')" class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Tahsilatı Geri Al</button>`)
+                        + `<button onclick="undoDelivery('${o.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Teslimi Geri Al</button>`;
+                }
+                actions += `<button onclick="openOrderEditModal('${o.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold mr-1">Düzenle</button>`
+                    + `<button onclick="deleteLog('sales','${o.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">Sil</button>`;
+                return `<tr>
+                    <td class="p-2">${new Date(o.date).toLocaleDateString('tr-TR')}</td>
+                    <td class="p-2">${esc(items)}</td>
+                    <td class="p-2 text-right font-bold">${fmt(o.total)}</td>
+                    <td class="p-2">${o.type ? esc(o.type) + (o.invoiceNo ? ' #' + esc(o.invoiceNo) : '') : '-'}</td>
+                    <td class="p-2">${st}</td>
+                    <td class="p-2 text-xs">${dates}</td>
+                    <td class="p-2 text-center whitespace-nowrap">${actions}</td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="7" class="p-4 text-center text-slate-400">Bu bayiye ait sipariş yok.</td></tr>';
             return true;
         }
 
