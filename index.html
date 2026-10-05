@@ -1047,10 +1047,13 @@
                     <label class="text-xs font-bold text-slate-500 mb-1">Müşteri / Bayi Seçimi</label>
                     <select id="pos-dealer" class="w-full border rounded p-2 text-sm mb-3 bg-white"></select>
 
-                    <label class="text-xs font-bold text-slate-500 mb-1">Kategori Filtresi</label>
-                    <select id="pos-cat-filter" onchange="renderPosProducts()" class="w-full border rounded p-2 text-xs mb-2 bg-white">
-                        <option value="">Tüm Kategoriler</option>
-                    </select>
+                    <label class="text-xs font-bold text-slate-500 mb-1">Kategori ve Arama</label>
+<div class="flex gap-2 mb-2">
+    <select id="pos-cat-filter" onchange="renderPosProducts()" class="w-1/2 border rounded p-2 text-xs bg-white">
+        <option value="">Tümü</option>
+    </select>
+    <input type="text" id="pos-search" placeholder="Ürün ara..." oninput="renderPosProducts()" class="w-1/2 border rounded p-2 text-xs bg-white outline-none focus:border-sky-500">
+</div>
 
                     <label class="text-xs font-bold text-slate-500 mb-1">Ürün Kataloğu <span class="font-normal text-slate-400">(stok durumuyla)</span></label>
                     <div id="pos-products" class="flex-1 overflow-y-auto space-y-2"></div>
@@ -1967,19 +1970,26 @@
         }
 
         function renderPosProducts() {
-            const filter = $('pos-cat-filter') ? $('pos-cat-filter').value : '';
-            const list = state.models.filter(m => !filter || (m.category || 'Diğer') === filter);
-            const known = PRODUCT_CATEGORIES.filter(cat => list.some(m => (m.category || 'Diğer') === cat));
-            const restCats = [...new Set(list.map(m => (m.category || 'Diğer')))].filter(c => !PRODUCT_CATEGORIES.includes(c));
-            let html = '';
-            known.concat(restCats).forEach(cat => {
-                const inCat = list.filter(m => (m.category || 'Diğer') === cat).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-                if (!inCat.length) return;
-                html += `<div class="text-[10px] uppercase tracking-wider font-bold text-slate-400 pt-1">${esc(cat)}</div>`;
-                inCat.forEach(m => { html += posProductRow(m); });
-            });
-            $('pos-products').innerHTML = html || '<p class="text-center text-slate-400 text-sm py-4">Henüz ürün eklenmedi.</p>';
-        }
+    const filter = $('pos-cat-filter') ?$('pos-cat-filter').value : '';
+    const searchTxt = $('pos-search') ?$('pos-search').value.toLowerCase().trim() : ''; // Arama metnini al
+    
+    // Hem kategori hem de isim aramasını aynı anda uygula
+    const list = state.models.filter(m => 
+        (!filter || (m.category || 'Diğer') === filter) &&
+        (!searchTxt || m.name.toLowerCase().includes(searchTxt))
+    );
+    
+    const known = PRODUCT_CATEGORIES.filter(cat => list.some(m => (m.category || 'Diğer') === cat));
+    const restCats = [...new Set(list.map(m => (m.category || 'Diğer')))].filter(c => !PRODUCT_CATEGORIES.includes(c));
+    let html = '';
+    known.concat(restCats).forEach(cat => {
+        const inCat = list.filter(m => (m.category || 'Diğer') === cat).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+        if (!inCat.length) return;
+        html += `<div class="text-[10px] uppercase tracking-wider font-bold text-slate-400 pt-1">${esc(cat)}</div>`;
+        inCat.forEach(m => { html += posProductRow(m); });
+    });
+    $('pos-products').innerHTML = html || '<p class="text-center text-slate-400 text-sm py-4">Ürün bulunamadı.</p>';
+}
 
         function posProductRow(m) {
             const ptype = m.ptype || 'uretilen';
@@ -2047,25 +2057,35 @@
                 if (!m) return '';
                 const unitPrice = c.unitPrice ?? m.price ?? 0;
                 const lineTot = unitPrice * c.qty; tot += lineTot; cnt += (c.qty || 0);
-                return `
-                <div class="flex justify-between items-center text-sm border-b py-1">
-                    <span>${c.qty}x ${esc(m.name)}</span>
-                    <div class="flex items-center gap-2">
-                    <div style="display:flex; align-items:center; gap:4px;">
-                      <input type="number" step="0.01" min="0"
-                             value="${unitPrice}"
-                             onchange="posPriceSet('${c.mId}', this.value)"
-                             style="width:90px; padding:4px 8px; border:1px solid #ddd; border-radius:4px;
-                                    font-size:14px; transition:all 0.2s;"
-                             onfocus="this.style.borderColor='#4CAF50'; this.style.boxShadow='0 0 4px rgba(76,175,80,0.3)'"
-                             onblur="this.style.borderColor='#ddd'; this.style.boxShadow='none'">
-                      <span style="font-weight:500; color:#333;">₺</span>
-                      <small style="color:#999; font-style:italic; margin-left:4px;">(kat: ${m.price}₺)</small>
-                    </div>
-                    <span class="font-semibold">${lineTot.toFixed(2)} ₺</span>
-                    <button onclick="removeFromCart('${m.id}')" class="text-rose-500 font-bold px-1">X</button>
-                    </div>
-                </div>`;
+                // renderCart() fonksiyonu içindeki return `...` bloğunu bununla değiştirin:
+return `
+<div class="flex justify-between items-center text-sm border-b py-2 flex-wrap gap-2">
+    <div class="flex items-center gap-2">
+        <!-- Adet Kontrol Butonları -->
+        <div class="flex items-center gap-1">
+            <button onclick="posQtyChange('${m.id}', -1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 w-6 h-6 rounded font-bold flex items-center justify-center leading-none">−</button>
+            <input type="number" min="0" value="${c.qty}" onchange="posQtySet('${m.id}', this.value)" class="w-10 border border-slate-300 rounded text-center text-xs h-6 p-0">
+            <button onclick="posQtyChange('${m.id}', 1)" class="bg-sky-100 hover:bg-sky-200 text-sky-700 w-6 h-6 rounded font-bold flex items-center justify-center leading-none">+</button>
+        </div>
+        <!-- Ürün Adı -->
+        <span class="font-medium truncate max-w-[130px]" title="${esc(m.name)}">${esc(m.name)}</span>
+    </div>
+    <!-- Fiyat ve Silme Alanı (Orijinali ile aynı) -->
+    <div class="flex items-center gap-2 ml-auto">
+        <div style="display:flex; align-items:center; gap:4px;">
+            <input type="number" step="0.01" min="0"
+                   value="${unitPrice}"
+                   onchange="posPriceSet('${c.mId}', this.value)"
+                   style="width:90px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; font-size:14px; transition:all 0.2s;"
+                   onfocus="this.style.borderColor='#4CAF50'; this.style.boxShadow='0 0 4px rgba(76,175,80,0.3)'"
+                   onblur="this.style.borderColor='#ddd'; this.style.boxShadow='none'">
+            <span style="font-weight:500; color:#333;">₺</span>
+            <small style="color:#999; font-style:italic; margin-left:4px;">(kat: ${m.price}₺)</small>
+        </div>
+        <span class="font-semibold">${lineTot.toFixed(2)} ₺</span>
+        <button onclick="removeFromCart('${m.id}')" class="text-rose-500 font-bold px-1 text-lg hover:text-rose-600 transition">X</button>
+    </div>
+</div>`;
             }).join('') || '<p class="text-center text-slate-400 text-sm py-4">Sepet boş.</p>';
             $('pos-total').innerHTML = `
               <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
